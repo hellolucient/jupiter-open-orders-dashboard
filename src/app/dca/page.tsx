@@ -3,7 +3,6 @@
 import { useDCAData } from '@/hooks/useDCAData'
 import { LoadingSpinner } from '@/components/ui/loading-spinner'
 import { TokenSection } from '@/components/dca/TokenSection'
-import type { Position } from '@/lib/dca/types'
 
 export default function DCAPage() {
   const { positions, summary, chartData, loading, error, refetch } = useDCAData()

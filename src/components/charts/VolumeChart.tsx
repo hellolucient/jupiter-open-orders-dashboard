@@ -13,8 +13,7 @@ import {
   Legend,
   ChartOptions,
   Scale,
-  CoreScaleOptions,
-  Tick
+  CoreScaleOptions
 } from 'chart.js'
 
 ChartJS.register(
@@ -53,12 +52,12 @@ export function VolumeChart({
 
     if (mode === 'daily') {
       // Generate 24 hourly data points
-      return Array.from({ length: 24 }, (_, i) => {
+      return Array.from({ length: 24 }, () => {
         return baseValue + (Math.random() * variationValue);
       });
     } else {
       // Generate 7 daily data points
-      return Array.from({ length: 7 }, (_, i) => {
+      return Array.from({ length: 7 }, () => {
         return baseValue + (Math.random() * variationValue);
       });
     }

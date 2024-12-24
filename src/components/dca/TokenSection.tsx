@@ -26,13 +26,6 @@ export function TokenSection({
 }: TokenSectionProps) {
   const [selectedType, setSelectedType] = useState<'all' | 'dca' | 'limit'>('all')
   
-  // Filter orders based on selected type
-  const filteredOrders = useMemo(() => {
-    if (selectedType === 'dca') return dcaOrders
-    if (selectedType === 'limit') return limitOrders
-    return []
-  }, [selectedType, dcaOrders, limitOrders])
-
   // Calculate filtered summary
   const filteredSummary = useMemo(() => {
     if (!summary) return undefined
