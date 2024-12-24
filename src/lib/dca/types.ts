@@ -67,5 +67,7 @@ export interface DCAAccountType {
     bump: number
     minOutAmount?: BN
     maxOutAmount?: BN
+    createdAt: BN
+    nextCycleAmountLeft: BN
   }
 } 

@@ -46,7 +46,6 @@ export function VolumeChart({
   // Generate mock time series data based on current volumes or orders
   const generateTimeSeriesData = (value: number) => {
     // Calculate a reasonable base value that maintains the total
-    const periods = mode === 'daily' ? 24 : 7;
     const baseValue = value * 0.8; // Use 80% as the base
     const variationValue = value * 0.2; // Use 20% for variation
 

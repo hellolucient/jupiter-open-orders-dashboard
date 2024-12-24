@@ -2,6 +2,7 @@ import { Connection, PublicKey } from '@solana/web3.js'
 import { DCA, Network } from '@jup-ag/dca-sdk'
 import fs from 'fs'
 import { TOKENS } from './tokenConfig'
+import type { DCAAccountType } from './types'
 
 const LOGOS_MINT = new PublicKey(TOKENS.LOGOS.address)
 const CHAOS_MINT = new PublicKey(TOKENS.CHAOS.address)
@@ -43,7 +44,7 @@ export async function analyzeDcaOrders() {
   output += 'Detailed Order Analysis\n'
   output += '=====================\n\n'
 
-  const analyzeOrder = async (acc: any) => {
+  const analyzeOrder = async (acc: DCAAccountType) => {
     const inAmount = acc.account.inAmountPerCycle.toString()
     const totalAmount = acc.account.inDeposited.toString()
     const usedAmount = acc.account.inUsed.toString()
