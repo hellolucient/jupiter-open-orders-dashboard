@@ -1,0 +1,46 @@
+DCA Orders Analysis
+===================
+
+Total positions found: 54034
+CHAOS/LOGOS positions: 117
+
+Detailed Order Analysis
+=====================
+
+Order: Xf8pumouYFTCVi3dshuoEYx8BYs5mgZeQhNbFJdfJ1f
+Type: CHAOS Buy
+Input Mint: So11111111111111111111111111111111111111112
+Output Mint: 8SgNwESovnbG1oNEaPVhg6CR9mTMSK7jPvcYRe3wpump
+
+Amounts:
+- Amount per cycle (raw): 607037037
+- Total deposited (raw): 16390000000
+- Amount used (raw): 15782962962
+- Amount withdrawn (raw): 0
+- Remaining amount (raw): 16390000000
+- Next cycle amount left: 607037038
+
+Cycles:
+- Total cycles: 28
+- Completed cycles: 26
+- Remaining cycles: 2
+- Cycle frequency: 86400 seconds (1 days)
+- Next cycle at: 2024-12-25T11:19:47.000Z
+- Created at: 2024-11-29T11:19:04.000Z
+
+State Analysis:
+- Was instant fill: false
+- Has remaining cycles: true
+- Has unused deposit: true
+- Next cycle in future: true
+- Is active DCA: true
+
+----------------------------------------
+
+
+Summary:
+========
+Total CHAOS/LOGOS positions: 117
+Instant fill orders filtered out: 0
+Inactive orders filtered out: 116
+Active DCA orders shown: 1
