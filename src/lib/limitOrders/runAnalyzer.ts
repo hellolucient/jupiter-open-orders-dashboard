@@ -18,9 +18,9 @@ export const runAnalyzer = async () => {
     try {
       await connection.getSlot();
       console.log('Connection test successful');
-    } catch (connError: any) {
+    } catch (connError: unknown) {
       console.error('Connection test failed:', connError);
-      throw new Error(`Failed to connect to RPC: ${connError.message}`);
+      throw new Error(`Failed to connect to RPC: ${connError instanceof Error ? connError.message : 'Unknown error'}`);
     }
 
     const programId = JUPITER_LIMIT_PROGRAM_ID;

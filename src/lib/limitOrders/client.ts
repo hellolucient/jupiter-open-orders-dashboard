@@ -80,7 +80,7 @@ export class JupiterLimitOrdersAPI {
         const high = dataView.getUint32(offset + 4, true);
         const amount = low + (high * 4294967296); // 2^32
         return amount / Math.pow(10, decimals);
-      } catch (err) {
+      } catch {
         return 0;
       }
     };
@@ -95,7 +95,7 @@ export class JupiterLimitOrdersAPI {
         const high = dataView.getUint32(offset + 4, true);
         const timestamp = low + (high * 4294967296); // 2^32
         return new Date(timestamp * 1000).toISOString();
-      } catch (err) {
+      } catch {
         return new Date().toISOString();
       }
     };

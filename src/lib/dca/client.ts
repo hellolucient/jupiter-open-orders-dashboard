@@ -1,6 +1,5 @@
 import { DCA, Network } from '@jup-ag/dca-sdk'
 import { Connection, PublicKey } from '@solana/web3.js'
-import BN from 'bn.js'
 import type { TokenSummary, Position, ChartDataPoint, DCAAccountType } from './types'
 import { TOKENS, getTokenByMint, toDecimalAmount } from '../shared/tokenConfig'
 
@@ -32,7 +31,7 @@ export class JupiterDCAAPI {
   }
 
   private async withRetry<T>(operation: () => Promise<T>, maxRetries = 3): Promise<T> {
-    let lastError: any
+    let lastError: unknown = new Error('Operation failed')
     for (let i = 0; i < maxRetries; i++) {
       try {
         return await operation()

@@ -1,5 +1,3 @@
-import { PublicKey } from '@solana/web3.js'
-
 // Basic token interface
 export interface Token {
   address: string

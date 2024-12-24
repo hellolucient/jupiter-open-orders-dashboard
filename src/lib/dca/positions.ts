@@ -83,7 +83,6 @@ export async function getDcaPositions(connection: Connection): Promise<DCAPositi
 
     // Get correct decimals from token config
     const inputDecimals = isBuy ? TOKENS.USDC.decimals : TOKENS[token].decimals
-    const outputDecimals = isBuy ? TOKENS[token].decimals : TOKENS.USDC.decimals
 
     // For amounts in the input token
     const totalAmount = bnToNumber(account.account.inDeposited, inputDecimals)
