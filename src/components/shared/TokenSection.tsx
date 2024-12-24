@@ -125,19 +125,19 @@ export function TokenSection({ tokenSymbol, currentPrice, mode = 'all', autoRefr
               <div className="mb-3">
                 <div className="text-gray-400 text-sm">DCA</div>
                 <div className="text-xl">{tokenDcaSummary.buyOrders}</div>
-                <div className="text-sm text-gray-400">Volume: {tokenDcaSummary.buyVolume.toLocaleString()} {tokenSymbol}</div>
+                <div className="text-4xl font-black tracking-tight text-green-400">{tokenDcaSummary.buyVolume.toLocaleString()} <span className="text-base font-medium text-green-500">{tokenSymbol}</span></div>
               </div>
               <div>
                 <div className="text-gray-400 text-sm">Limit Orders</div>
                 <div className="text-xl">{tokenLoSummary.buyOrders}</div>
-                <div className="text-sm text-gray-400">Volume: {tokenLoSummary.buyVolume.toLocaleString()} {tokenSymbol}</div>
+                <div className="text-4xl font-black tracking-tight text-green-400">{tokenLoSummary.buyVolume.toLocaleString()} <span className="text-base font-medium text-green-500">{tokenSymbol}</span></div>
               </div>
             </>
           ) : (
             <>
               <div className="text-2xl font-bold">{displayStats.buyOrders}</div>
               <div className="text-gray-400">Buy Volume</div>
-              <div className="text-xl">{displayStats.buyVolume.toLocaleString()} {tokenSymbol}</div>
+              <div className="text-4xl font-black tracking-tight text-green-400">{displayStats.buyVolume.toLocaleString()} <span className="text-base font-medium text-green-500">{tokenSymbol}</span></div>
               <div className="text-sm text-gray-400">${(displayStats.buyVolume * currentPrice).toFixed(2)}</div>
             </>
           )}
@@ -150,19 +150,19 @@ export function TokenSection({ tokenSymbol, currentPrice, mode = 'all', autoRefr
               <div className="mb-3">
                 <div className="text-gray-400 text-sm">DCA</div>
                 <div className="text-xl">{tokenDcaSummary.sellOrders}</div>
-                <div className="text-sm text-gray-400">Volume: {tokenDcaSummary.sellVolume.toLocaleString()} {tokenSymbol}</div>
+                <div className="text-4xl font-black tracking-tight text-red-400">{tokenDcaSummary.sellVolume.toLocaleString()} <span className="text-base font-medium text-red-500">{tokenSymbol}</span></div>
               </div>
               <div>
                 <div className="text-gray-400 text-sm">Limit Orders</div>
                 <div className="text-xl">{tokenLoSummary.sellOrders}</div>
-                <div className="text-sm text-gray-400">Volume: {tokenLoSummary.sellVolume.toLocaleString()} {tokenSymbol}</div>
+                <div className="text-4xl font-black tracking-tight text-red-400">{tokenLoSummary.sellVolume.toLocaleString()} <span className="text-base font-medium text-red-500">{tokenSymbol}</span></div>
               </div>
             </>
           ) : (
             <>
               <div className="text-2xl font-bold">{displayStats.sellOrders}</div>
               <div className="text-gray-400">Sell Volume</div>
-              <div className="text-xl">{displayStats.sellVolume.toLocaleString()} {tokenSymbol}</div>
+              <div className="text-4xl font-black tracking-tight text-red-400">{displayStats.sellVolume.toLocaleString()} <span className="text-base font-medium text-red-500">{tokenSymbol}</span></div>
               <div className="text-sm text-gray-400">${(displayStats.sellVolume * currentPrice).toFixed(2)}</div>
             </>
           )}
