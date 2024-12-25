@@ -10,7 +10,7 @@ export function TokenSummaryCard({ token, summary }: TokenSummaryCardProps) {
   return (
     <div className="grid grid-cols-1 landscape:grid-cols-2 sm:grid-cols-2 gap-2">
       {/* Buy Stats */}
-      <div className="bg-[#2a2a2a] p-3 rounded-lg">
+      <div className="relative bg-[#2a2a2a] p-3 rounded-lg">
         <div className="flex items-center gap-2 mb-2">
           <div className="w-2 h-2 rounded-full bg-green-500"></div>
           <span className="text-sm text-gray-400">Buy {token} Orders</span>
@@ -24,7 +24,7 @@ export function TokenSummaryCard({ token, summary }: TokenSummaryCardProps) {
       </div>
 
       {/* Sell Stats */}
-      <div className="bg-[#2a2a2a] p-3 rounded-lg">
+      <div className="relative bg-[#2a2a2a] p-3 rounded-lg">
         <div className="flex items-center gap-2 mb-2">
           <div className="w-2 h-2 rounded-full bg-red-500"></div>
           <span className="text-sm text-gray-400">Sell {token} Orders</span>

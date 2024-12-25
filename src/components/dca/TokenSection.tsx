@@ -70,7 +70,7 @@ export function TokenSection({
   }, [selectedType, chartData])
 
   return (
-    <div className="h-full flex flex-col space-y-2 sm:space-y-4">
+    <div className="relative flex flex-col space-y-2 sm:space-y-4">
       <div className="flex items-center justify-between p-2 sm:p-4 bg-gray-900 rounded-lg">
         <h2 className="text-base sm:text-lg font-bold">{token}</h2>
         <div className="text-sm sm:text-base text-gray-400">Current Price: ${currentPrice.toFixed(6)}</div>
@@ -78,18 +78,20 @@ export function TokenSection({
       
       <OrderTypeTabs selectedType={selectedType} onChange={setSelectedType} />
       
-      <TokenSummaryCard 
-        token={token} 
-        summary={filteredSummary || { 
-          buyOrders: 0,
-          sellOrders: 0,
-          buyVolume: 0,
-          sellVolume: 0,
-          buyVolumeUSDC: 0,
-          sellVolumeUSDC: 0,
-          price: currentPrice
-        }} 
-      />
+      <div className="relative">
+        <TokenSummaryCard 
+          token={token} 
+          summary={filteredSummary || { 
+            buyOrders: 0,
+            sellOrders: 0,
+            buyVolume: 0,
+            sellVolume: 0,
+            buyVolumeUSDC: 0,
+            sellVolumeUSDC: 0,
+            price: currentPrice
+          }} 
+        />
+      </div>
       
       <div className="h-[200px] landscape:h-[250px] sm:h-[300px] bg-[#2a2a2a] rounded-lg p-2 sm:p-4">
         <VolumeChart data={filteredChartData} />
