@@ -27,18 +27,18 @@ export default function DCAPage() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <div className="p-4">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Jupiter DCA Dashboard</h1>
+      <div className="p-2 sm:p-4">
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-xl sm:text-2xl font-bold">Jupiter DCA Dashboard</h1>
           <button 
             onClick={refetch}
-            className="px-4 py-2 bg-blue-500 rounded hover:bg-blue-600"
+            className="px-4 py-2 bg-blue-500 rounded hover:bg-blue-600 text-sm sm:text-base"
           >
             Refresh
           </button>
         </div>
 
-        <div className="grid grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 landscape:grid-cols-2 sm:grid-cols-2 gap-4">
           {/* LOGOS Section */}
           <div>
             <TokenSection

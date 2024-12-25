@@ -70,10 +70,10 @@ export function TokenSection({
   }, [selectedType, chartData])
 
   return (
-    <div className="h-full flex flex-col space-y-4">
+    <div className="h-full flex flex-col space-y-2 sm:space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold">{token}</h2>
-        <div className="text-gray-400">Current Price: ${currentPrice.toFixed(6)}</div>
+        <h2 className="text-base sm:text-lg font-bold">{token}</h2>
+        <div className="text-sm sm:text-base text-gray-400">Current Price: ${currentPrice.toFixed(6)}</div>
       </div>
       
       <OrderTypeTabs selectedType={selectedType} onChange={setSelectedType} />
@@ -91,15 +91,17 @@ export function TokenSection({
         }} 
       />
       
-      <VolumeChart data={filteredChartData} token={token} />
+      <div className="h-[200px] landscape:h-[250px] sm:h-[300px] bg-[#2a2a2a] rounded-lg p-2 sm:p-4">
+        <VolumeChart data={filteredChartData} token={token} />
+      </div>
       
       {/* Orders Grid Layout */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 landscape:grid-cols-2 sm:grid-cols-2 gap-4">
         {/* DCA Orders Section */}
         {(selectedType === 'all' || selectedType === 'dca') && (
           <div>
-            <h3 className="text-lg mb-4">DCA Orders</h3>
-            <div className="space-y-4">
+            <h3 className="text-base sm:text-lg mb-2 sm:mb-4">DCA Orders</h3>
+            <div className="space-y-2 sm:space-y-4">
               {dcaOrders.map(order => (
                 <DCAOrderCard 
                   key={order.id}
@@ -121,8 +123,8 @@ export function TokenSection({
         {/* Limit Orders Section */}
         {(selectedType === 'all' || selectedType === 'limit') && (
           <div>
-            <h3 className="text-lg mb-4">Limit Orders</h3>
-            <div className="space-y-4">
+            <h3 className="text-base sm:text-lg mb-2 sm:mb-4">Limit Orders</h3>
+            <div className="space-y-2 sm:space-y-4">
               {limitOrders.map(order => (
                 <LimitOrderCard 
                   key={order.id}
