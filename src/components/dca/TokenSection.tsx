@@ -71,9 +71,15 @@ export function TokenSection({
 
   return (
     <div className="h-full flex flex-col space-y-2 sm:space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="hidden sm:flex sm:items-center sm:justify-between sm:sticky sm:top-0 sm:z-10 sm:bg-gray-900 sm:p-4 sm:rounded-lg sm:shadow-lg">
         <h2 className="text-base sm:text-lg font-bold">{token}</h2>
         <div className="text-sm sm:text-base text-gray-400">Current Price: ${currentPrice.toFixed(6)}</div>
+      </div>
+
+      {/* Mobile header (non-sticky) */}
+      <div className="flex sm:hidden items-center justify-between">
+        <h2 className="text-base font-bold">{token}</h2>
+        <div className="text-sm text-gray-400">Current Price: ${currentPrice.toFixed(6)}</div>
       </div>
       
       <OrderTypeTabs selectedType={selectedType} onChange={setSelectedType} />
