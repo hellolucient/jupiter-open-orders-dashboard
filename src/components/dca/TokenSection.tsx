@@ -92,7 +92,7 @@ export function TokenSection({
       />
       
       <div className="h-[200px] landscape:h-[250px] sm:h-[300px] bg-[#2a2a2a] rounded-lg p-2 sm:p-4">
-        <VolumeChart data={filteredChartData} token={token} />
+        <VolumeChart data={filteredChartData} />
       </div>
       
       {/* Orders Grid Layout */}

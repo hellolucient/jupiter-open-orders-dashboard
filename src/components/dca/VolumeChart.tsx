@@ -4,10 +4,9 @@ import { VolumeChart as BaseVolumeChart } from '@/components/charts/VolumeChart'
 
 interface Props {
   data: ChartDataPoint[]
-  token: string
 }
 
-export function VolumeChart({ data, token }: Props) {
+export function VolumeChart({ data }: Props) {
   const latestData = data[0] || {
     buyVolume: 0,
     sellVolume: 0,
