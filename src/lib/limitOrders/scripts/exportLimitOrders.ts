@@ -1,6 +1,6 @@
 import fs from 'fs'
 import { Connection } from '@solana/web3.js'
-import { JupiterLimitOrdersAPI } from '../lib/limitOrders/client'
+import { JupiterLimitOrdersAPI } from '../client'
 import dotenv from 'dotenv'
 
 // Load environment variables
