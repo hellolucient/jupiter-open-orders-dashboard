@@ -52,8 +52,50 @@ export const TOKENS = {
     decimals: 9,
     name: 'JitoSOL',
     symbol: 'JITOSOL'
+  },
+  ORCA: {
+    address: 'orcaEKTdK7LKz57vaAYr9QeNsVEPfiu6QeMU1kektZE',
+    decimals: 6,
+    name: 'ORCA',
+    symbol: 'ORCA'
+  },
+  MNGO: {
+    address: 'MangoCzJ36AjZyKwVj3VnYU4GTonjfVEnJmvvWaxLac',
+    decimals: 6,
+    name: 'MNGO',
+    symbol: 'MNGO'
+  },
+  DUAL: {
+    address: 'DUALa4FC2yREwZ59PHeu1un4wis36vHRv5hWVHHHbLZp',
+    decimals: 6,
+    name: 'DUAL',
+    symbol: 'DUAL'
+  },
+  SHDW: {
+    address: 'SHDWyBxihqiCj6YekG2GUr7wqKLeLAMK1gHZck9pL6y',
+    decimals: 9,
+    name: 'SHDW',
+    symbol: 'SHDW'
   }
 } as const
+
+// Token groupings for different tiers
+export const TIER1_TOKENS = [
+  TOKENS.USDC,
+  TOKENS.SOL,
+  TOKENS.BONK
+] as const
+
+export const TIER2_TOKENS = [
+  TOKENS.ORCA,
+  TOKENS.RAY,
+  TOKENS.MNGO
+] as const
+
+export const TIER3_TOKENS = [
+  TOKENS.DUAL,
+  TOKENS.SHDW
+] as const
 
 export type TokenSymbol = keyof typeof TOKENS
 export type TokenInfo = typeof TOKENS[TokenSymbol]

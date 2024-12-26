@@ -88,9 +88,31 @@ export class JupiterDCAAPI {
   }
 
   private async convertDCAAccount(account: DCAAccountType, price: number, token: string, type: "BUY" | "SELL"): Promise<Position> {
+    // Debug logging for raw mint values
+    console.log('Raw DCA Account Mints:', {
+      inputMint: {
+        raw: account.account.inputMint,
+        toString: account.account.inputMint.toString(),
+        isPublicKey: account.account.inputMint instanceof PublicKey
+      },
+      outputMint: {
+        raw: account.account.outputMint,
+        toString: account.account.outputMint.toString(),
+        isPublicKey: account.account.outputMint instanceof PublicKey
+      }
+    });
+
     // Get input and output token info
     const inputToken = getTokenByMint(account.account.inputMint.toString())
     const outputToken = getTokenByMint(account.account.outputMint.toString())
+
+    // Debug logging for token lookup results
+    console.log('Token Lookup Results:', {
+      inputMintStr: account.account.inputMint.toString(),
+      outputMintStr: account.account.outputMint.toString(),
+      inputToken,
+      outputToken
+    });
 
     if (!inputToken || !outputToken) {
       console.error('Unknown token:', {

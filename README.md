@@ -1,85 +1,107 @@
 # Jupiter Open Orders Dashboard
 
-This is a dashboard for viewing Jupiter DCA and Limit Orders.
+A dashboard for monitoring Jupiter DCA and Limit Orders for LOGOS and CHAOS tokens.
 
-## DCA Orders
+## Project Structure
 
-The dashboard shows active DCA (Dollar Cost Average) orders for CHAOS and LOGOS tokens. Important notes:
+```
+src/
+├── app/                    # Next.js app directory
+│   ├── page.tsx           # Main dashboard page
+│   └── layout.tsx         # Root layout
+│
+├── components/
+│   ├── charts/
+│   │   └── VolumeChart.tsx    # Shared volume visualization
+│   ├── shared/
+│   │   ├── TokenSection.tsx   # Token-specific dashboard section
+│   │   ├── DashboardHeader.tsx
+│   │   └── OrderTabs.tsx      # DCA/Limit order view switcher
+│   └── ui/
+│       └── loading-spinner.tsx # Generic loading indicator
+│
+├── lib/
+│   ├── dca/                   # DCA (Dollar Cost Average) Feature
+│   │   ├── components/
+│   │   │   └── DCAOrderCard.tsx
+│   │   ├── hooks/
+│   │   │   └── useDCAData.ts  # DCA data fetching and state
+│   │   ├── scripts/
+│   │   │   ├── fetchDCAHistory.ts
+│   │   │   └── runAnalyzer.ts
+│   │   └── types/
+│   │       └── index.ts       # DCA-specific types
+│   │
+│   ├── limitOrders/           # Limit Orders Feature
+│   │   ├── components/
+│   │   │   └── LimitOrderCard.tsx
+│   │   ├── hooks/
+│   │   │   └── useLimitOrders.ts  # LO data fetching and state
+│   │   ├── scripts/
+│   │   │   ├── exportLimitOrders.ts
+│   │   │   └── runAnalyzerTest.ts
+│   │   └── types/
+│   │       └── index.ts       # LO-specific types
+│   │
+│   └── shared/               # Shared utilities
+│       ├── hooks/
+│       │   └── useAutoRefresh.ts
+│       ├── types/
+│       │   ├── token.ts      # Token interfaces
+│       │   ├── api.ts        # API response types
+│       │   └── chart.ts      # Chart data types
+│       └── tokenConfig.ts    # Token configuration
+│
+└── types/                    # Type re-exports
+    └── index.ts
 
-### Flash Fills vs Regular DCA Orders
-
-- Orders initiated with `initiateFlashFill` instruction are filtered out as they represent immediate execution rather than ongoing DCA orders
-- Flash fills can also occur in regular DCA orders when no price limits are set (no minOutAmount/maxOutAmount)
-  - These orders will execute immediately when the next cycle hits, as there are no price constraints
-  - They are treated differently from orders initiated with `initiateFlashFill`
-- Only orders with remaining cycles and unused deposits are shown
-- The analysis focuses on CHAOS and LOGOS token pairs
-
-### Price Limits and Estimated Output
-
-For buy orders, the estimated output tokens are calculated based on:
-- If minOutAmount is set: That's the minimum total tokens they'll get for the entire order
-- If no price limits: Current market price is used to estimate output (`remainingAmount / currentPrice`)
-
-For sell orders, the output is simply the remaining amount to be sold.
-
-### DCA Account Fields
-
-Each DCA account contains the following fields:
-
-- `user`: The owner of the DCA position
-- `inputMint`: The mint address of the input token
-- `outputMint`: The mint address of the output token
-- `idx`: Position index
-- `nextCycleAt`: Timestamp for the next cycle execution
-- `inDeposited`: Total amount deposited for input token
-- `inWithdrawn`: Amount of input token withdrawn
-- `outWithdrawn`: Amount of output token withdrawn
-- `inUsed`: Amount of input token used in swaps
-- `outReceived`: Amount of output token received from swaps
-- `inAmountPerCycle`: Amount of input token to use per cycle
-- `cycleFrequency`: Time between cycles in seconds
-- `nextCycleAmountLeft`: Remaining amount for the next cycle
-- `inAccount`: Input token account
-- `outAccount`: Output token account
-- `minOutAmount`: Minimum output amount per swap (price protection)
-- `maxOutAmount`: Maximum output amount per swap (price protection)
-- `keeperInBalanceBeforeBorrow`: Keeper's input token balance before borrowing
-- `dcaOutBalanceBeforeSwap`: DCA output token balance before swap
-- `createdAt`: Position creation timestamp
-- `bump`: Account bump seed
-
-## Getting Started
-
-First, create a `.env` file with your Helius RPC URL:
-```env
-NEXT_PUBLIC_RPC_URL=https://rpc.helius.xyz/?api-key=YOUR_API_KEY
+data/                        # Script outputs (git-ignored)
+├── dca/                     # DCA analysis outputs
+└── limit-orders/            # Limit order analysis outputs
 ```
 
-Then run the development server:
+## Key Components
+
+### DCA (Dollar Cost Average)
+- `useDCAData`: Hook for fetching and managing DCA positions
+- `DCAOrderCard`: Component for displaying individual DCA orders
+- Scripts for analyzing DCA order history and performance
+
+### Limit Orders
+- `useLimitOrders`: Hook for fetching and managing limit orders
+- `LimitOrderCard`: Component for displaying individual limit orders
+- Scripts for exporting and analyzing limit order data
+
+### Shared
+- `TokenSection`: Main component for displaying token-specific data
+- `VolumeChart`: Chart component for visualizing order volumes
+- Token configuration and shared types
+
+## Scripts
+
+### DCA Scripts
+- `fetchDCAHistory.ts`: Fetches and analyzes DCA order history
+- `runAnalyzer.ts`: Analyzes DCA order performance
+
+### Limit Order Scripts
+- `exportLimitOrders.ts`: Exports current limit orders
+- `runAnalyzerTest.ts`: Tests limit order analysis functionality
+
+## Development
 
 ```bash
+# Start development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-## Analysis Scripts
-
-The project includes scripts to analyze DCA and Limit orders:
-
-```bash
-# Analyze DCA orders
+# Run DCA analysis
 npm run test-dca
 
-# Analyze Limit orders
+# Run limit order analysis
 npm run test-lo
+
+# Export data
+npm run export-limit-orders
+npm run fetch-dca-history
 ```
 
 ## Learn More

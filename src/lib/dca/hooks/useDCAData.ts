@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react'
-import { jupiterDCA } from '@/lib/dca/client'
-import type { Position, TokenSummary, ChartDataPoint } from '@/lib/dca/types'
+import { useState, useCallback } from 'react'
+import { jupiterDCA } from '../client'
+import type { Position, TokenSummary, ChartDataPoint } from '../types'
+import { useAutoRefresh } from '@/lib/shared/hooks/useAutoRefresh'
 
 export function useDCAData(autoRefresh = false) {
   const [positions, setPositions] = useState<Position[]>([])
@@ -9,7 +10,7 @@ export function useDCAData(autoRefresh = false) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -30,23 +31,10 @@ export function useDCAData(autoRefresh = false) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  useEffect(() => {
-    fetchData()
-
-    // Set up auto-refresh only if enabled
-    let intervalId: NodeJS.Timeout | undefined
-    if (autoRefresh) {
-      intervalId = setInterval(fetchData, 30000) // 30 seconds
-    }
-
-    return () => {
-      if (intervalId) {
-        clearInterval(intervalId)
-      }
-    }
-  }, [autoRefresh])
+  // Use shared auto-refresh hook
+  useAutoRefresh(fetchData, autoRefresh)
 
   return {
     positions,

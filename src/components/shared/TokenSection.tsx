@@ -1,10 +1,10 @@
 'use client'
 
 import { VolumeChart } from '../charts/VolumeChart'
-import { DCAOrderCard } from '../orders/DCAOrderCard'
-import { LimitOrderCard } from '../orders/LimitOrderCard'
-import { useLimitOrders } from '../../hooks/useLimitOrders'
-import { useDCAData } from '../../hooks/useDCAData'
+import { DCAOrderCard } from '@/lib/dca/components/DCAOrderCard'
+import { LimitOrderCard } from '@/lib/limitOrders/components/LimitOrderCard'
+import { useLimitOrders } from '@/lib/limitOrders/hooks/useLimitOrders'
+import { useDCAData } from '@/lib/dca/hooks/useDCAData'
 import { useMemo } from 'react'
 
 interface TokenSectionProps {
