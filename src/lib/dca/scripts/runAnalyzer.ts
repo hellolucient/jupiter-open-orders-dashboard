@@ -1,4 +1,4 @@
-import { analyzeDcaOrders } from './analyzer'
+import { analyzeDcaOrders } from '../analyzer'
 import dotenv from 'dotenv'
 
 // Load environment variables
