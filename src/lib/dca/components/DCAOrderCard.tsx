@@ -23,47 +23,58 @@ export function DCAOrderCard({
   timestamp,
   estimatedOutput
 }: DCAOrderCardProps) {
+  const isBuy = type === 'buy'
+  const colorClass = isBuy ? 'text-green-500' : 'text-red-500'
+  const dotColorClass = isBuy ? 'bg-green-500' : 'bg-red-500'
+  const orderType = isBuy ? 'BUY' : 'SELL'
+
   return (
     <div className={`p-4 bg-gray-800 rounded-lg mb-3 border ${
-      type === 'buy' ? 'border-green-500/20' : 'border-red-500/20'
+      isBuy ? 'border-green-500/20' : 'border-red-500/20'
     }`}>
-      <div className="flex flex-col gap-2">
-        <div className="flex justify-between">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center">
+          <div className={`w-2 h-2 rounded-full ${dotColorClass}`} />
+          <span className={`ml-2 font-medium ${colorClass}`}>{orderType}</span>
+        </div>
+        <div className="text-gray-400 text-sm">
+          {timestamp}
+        </div>
+      </div>
+
+      <div className="grid gap-2">
+        <div className="grid grid-cols-2">
           <div className="text-gray-400">Total Amount</div>
-          <div>{totalAmount}</div>
+          <div className="text-right">{totalAmount}</div>
         </div>
-        <div className="flex justify-between">
+        <div className="grid grid-cols-2">
           <div className="text-gray-400">Split Info</div>
-          <div>{splitInfo}</div>
+          <div className="text-right">{splitInfo}</div>
         </div>
-        <div className="flex justify-between">
+        <div className="grid grid-cols-2">
           <div className="text-gray-400">Order Size</div>
-          <div>{orderSize}</div>
+          <div className="text-right">{orderSize}</div>
         </div>
-        <div className="flex justify-between">
+        <div className="grid grid-cols-2">
           <div className="text-gray-400">Frequency</div>
-          <div>{frequency}</div>
+          <div className="text-right">{frequency}</div>
         </div>
-        <div className="flex justify-between">
+        <div className="grid grid-cols-2">
           <div className="text-gray-400">Status</div>
-          <div className={status === 'Active' ? 'text-green-500' : 'text-gray-400'}>
+          <div className={`text-right ${status === 'Active' ? 'text-green-500' : 'text-gray-400'}`}>
             {status}
           </div>
         </div>
-        <div className="flex justify-between">
+        <div className="grid grid-cols-2">
           <div className="text-gray-400">Remaining Amount</div>
-          <div>{remainingAmount}</div>
+          <div className="text-right">{remainingAmount}</div>
         </div>
         {estimatedOutput && (
-          <div className="flex justify-between">
+          <div className="grid grid-cols-2">
             <div className="text-gray-400">Estimated Output</div>
-            <div>{estimatedOutput}</div>
+            <div className="text-right">{estimatedOutput}</div>
           </div>
         )}
-        <div className="flex justify-between">
-          <div className="text-gray-400">Last Update</div>
-          <div className="text-sm">{timestamp}</div>
-        </div>
       </div>
     </div>
   )

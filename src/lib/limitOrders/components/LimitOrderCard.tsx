@@ -48,22 +48,29 @@ export function LimitOrderCard({ order }: LimitOrderCardProps) {
 
   return (
     <div className="bg-gray-800 rounded-lg p-4 mb-3">
-      <div className="flex justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <div className={`w-2 h-2 rounded-full ${dotColorClass}`}></div>
-          <span className={`font-medium ${colorClass}`}>
-            {order.orderType}
-          </span>
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center">
+          <div className={`w-2 h-2 rounded-full ${dotColorClass}`} />
+          <span className={`ml-2 font-medium ${colorClass}`}>{order.orderType}</span>
         </div>
-        <span className="text-gray-400 text-sm">
+        <div className="text-gray-400 text-sm">
           {formatDate(order.createdAt)}
-        </span>
+        </div>
       </div>
 
       <div className="space-y-2 text-sm">
-        <div>Amount: {formatAmount(amount, amountSymbol)} {amountSymbol}</div>
-        <div>Price: {formatPrice(order.price)} {isBuy ? order.inputMint.symbol : order.outputMint.symbol}</div>
-        <div>Total: {formatAmount(total, totalSymbol)} {totalSymbol}</div>
+        <div className="flex justify-between">
+          <span>Amount:</span>
+          <span>{formatAmount(amount, amountSymbol)} {amountSymbol}</span>
+        </div>
+        <div className="flex justify-between">
+          <span>Price:</span>
+          <span>{formatPrice(order.price)} {isBuy ? order.inputMint.symbol : order.outputMint.symbol}</span>
+        </div>
+        <div className="flex justify-between">
+          <span>Total:</span>
+          <span>{formatAmount(total, totalSymbol)} {totalSymbol}</span>
+        </div>
       </div>
     </div>
   )
