@@ -108,7 +108,11 @@ export function TokenSection({ tokenSymbol, currentPrice, mode = 'all', autoRefr
   if (loLoading || dcaLoading || !loSummary || !dcaSummary || !orders || !dcaPositions) {
     return (
       <section className="p-4 bg-gray-900 rounded-lg animate-pulse">
-        <div className="h-96 bg-gray-800 rounded-lg"></div>
+        <div className="h-96 bg-gray-800 rounded-lg flex items-center justify-center">
+          <div className="text-gray-400 text-lg">
+            Loading orders...
+          </div>
+        </div>
       </section>
     );
   }
