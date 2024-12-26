@@ -17,10 +17,10 @@ interface TokenSectionProps {
   autoRefresh?: boolean
 }
 
-type SortOption = 'amount' | 'date'
+type SortOption = 'amount-desc' | 'amount-asc' | 'date-desc' | 'date-asc'
 
 export function TokenSection({ tokenSymbol, currentPrice, mode = 'all', autoRefresh = false }: TokenSectionProps) {
-  const [sortOption, setSortOption] = useState<SortOption>('amount')
+  const [sortOption, setSortOption] = useState<SortOption>('amount-desc')
   
   const { orders, summary: loSummary, loading: loLoading, error: loError } = useLimitOrders(autoRefresh);
   const { positions: dcaPositions, summary: dcaSummary, loading: dcaLoading, error: dcaError } = useDCAData(autoRefresh);
@@ -33,28 +33,28 @@ export function TokenSection({ tokenSymbol, currentPrice, mode = 'all', autoRefr
   // Sort orders by amount and date
   const sortLimitOrders = (orders: LimitOrder[], option: SortOption): LimitOrder[] => {
     return [...orders].sort((a, b) => {
-      if (option === 'date') {
+      if (option.startsWith('date')) {
         // Parse dates consistently
         const dateA = new Date(a.createdAt.split('.')[0]).getTime()
         const dateB = new Date(b.createdAt.split('.')[0]).getTime()
-        return dateB - dateA // Most recent first
+        return option === 'date-asc' ? dateA - dateB : dateB - dateA
       }
       
-      // Amount sort (default)
+      // Amount sort
       const amountA = a.orderType === 'BUY' ? a.takingAmount : a.makingAmount
       const amountB = b.orderType === 'BUY' ? b.takingAmount : b.makingAmount
-      return amountB - amountA // Highest first
+      return option === 'amount-asc' ? amountA - amountB : amountB - amountA
     })
   }
 
   const sortDCAOrders = (orders: Position[], option: SortOption): Position[] => {
     return [...orders].sort((a, b) => {
-      if (option === 'date') {
-        return b.lastUpdate - a.lastUpdate // Most recent first
+      if (option.startsWith('date')) {
+        return option === 'date-asc' ? a.lastUpdate - b.lastUpdate : b.lastUpdate - a.lastUpdate
       }
       
-      // Amount sort (default)
-      return b.totalAmount - a.totalAmount // Highest first
+      // Amount sort
+      return option === 'amount-asc' ? a.totalAmount - b.totalAmount : b.totalAmount - a.totalAmount
     })
   }
 
