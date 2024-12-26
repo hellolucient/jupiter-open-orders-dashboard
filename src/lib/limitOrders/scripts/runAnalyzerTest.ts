@@ -1,19 +1,10 @@
-import { runAnalyzer } from './runAnalyzer';
+import { runAnalyzer } from '../runAnalyzer';
 import * as dotenv from 'dotenv';
 
 // Load environment variables
-dotenv.config({ path: '.env.local' });
+dotenv.config();
 
-async function main() {
-  try {
-    console.log('Starting limit orders analysis...');
-    await runAnalyzer();
-    console.log('Analysis completed successfully!');
-  } catch (error) {
-    console.error('Test failed:', error);
-    process.exit(1);
-  }
-}
-
-// Run the test
-main(); 
+// Run the analyzer
+runAnalyzer()
+  .then(() => console.log('Analysis complete'))
+  .catch((error: unknown) => console.error('Error running analysis:', error)); 

@@ -85,8 +85,8 @@ async function exportLimitOrders() {
     }
 
     // Write to file
-    fs.writeFileSync('limit_orders_export.txt', output)
-    console.log('Export completed: limit_orders_export.txt')
+    fs.writeFileSync('data/limit-orders/limit_orders_export.txt', output)
+    console.log('Export completed: data/limit-orders/limit_orders_export.txt')
 
   } catch (error) {
     console.error('Error exporting limit orders:', error)
