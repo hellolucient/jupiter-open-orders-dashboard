@@ -88,6 +88,22 @@ export function TokenSection({ tokenSymbol, currentPrice, mode = 'all', autoRefr
                 mode === 'dca' ? tokenDcaSummary.sellVolume : tokenLoSummary.sellVolume
   };
 
+  // Format large numbers consistently
+  const formatNumber = (value: number, decimals: number = 0) => {
+    return value.toLocaleString('en-US', {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals
+    })
+  }
+
+  // Format currency values
+  const formatCurrency = (value: number) => {
+    return value.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    })
+  }
+
   // Show loading state if either data source is loading
   if (loLoading || dcaLoading || !loSummary || !dcaSummary || !orders || !dcaPositions) {
     return (
@@ -125,21 +141,27 @@ export function TokenSection({ tokenSymbol, currentPrice, mode = 'all', autoRefr
               <>
                 <div className="mb-3">
                   <div className="text-gray-400 text-sm">DCA</div>
-                  <div className="text-xl">{tokenDcaSummary.buyOrders}</div>
-                  <div className="text-4xl font-black tracking-tight text-green-400">{tokenDcaSummary.buyVolume.toLocaleString()} <span className="text-base font-medium text-green-500">{tokenSymbol}</span></div>
+                  <div className="text-xl">{formatNumber(tokenDcaSummary.buyOrders)}</div>
+                  <div className="text-4xl font-black tracking-tight text-green-400">
+                    {formatNumber(tokenDcaSummary.buyVolume)} <span className="text-base font-medium text-green-500">{tokenSymbol}</span>
+                  </div>
                 </div>
                 <div>
                   <div className="text-gray-400 text-sm">Limit Orders</div>
-                  <div className="text-xl">{tokenLoSummary.buyOrders}</div>
-                  <div className="text-4xl font-black tracking-tight text-green-400">{tokenLoSummary.buyVolume.toLocaleString()} <span className="text-base font-medium text-green-500">{tokenSymbol}</span></div>
+                  <div className="text-xl">{formatNumber(tokenLoSummary.buyOrders)}</div>
+                  <div className="text-4xl font-black tracking-tight text-green-400">
+                    {formatNumber(tokenLoSummary.buyVolume)} <span className="text-base font-medium text-green-500">{tokenSymbol}</span>
+                  </div>
                 </div>
               </>
             ) : (
               <>
-                <div className="text-2xl font-bold">{displayStats.buyOrders}</div>
+                <div className="text-2xl font-bold">{formatNumber(displayStats.buyOrders)}</div>
                 <div className="text-gray-400">Buy Volume</div>
-                <div className="text-4xl font-black tracking-tight text-green-400">{displayStats.buyVolume.toLocaleString()} <span className="text-base font-medium text-green-500">{tokenSymbol}</span></div>
-                <div className="text-sm text-gray-400">${(displayStats.buyVolume * currentPrice).toFixed(2)}</div>
+                <div className="text-4xl font-black tracking-tight text-green-400">
+                  {formatNumber(displayStats.buyVolume)} <span className="text-base font-medium text-green-500">{tokenSymbol}</span>
+                </div>
+                <div className="text-sm text-gray-400">${formatCurrency(displayStats.buyVolume * currentPrice)}</div>
               </>
             )}
           </div>
@@ -150,21 +172,27 @@ export function TokenSection({ tokenSymbol, currentPrice, mode = 'all', autoRefr
               <>
                 <div className="mb-3">
                   <div className="text-gray-400 text-sm">DCA</div>
-                  <div className="text-xl">{tokenDcaSummary.sellOrders}</div>
-                  <div className="text-4xl font-black tracking-tight text-red-400">{tokenDcaSummary.sellVolume.toLocaleString()} <span className="text-base font-medium text-red-500">{tokenSymbol}</span></div>
+                  <div className="text-xl">{formatNumber(tokenDcaSummary.sellOrders)}</div>
+                  <div className="text-4xl font-black tracking-tight text-red-400">
+                    {formatNumber(tokenDcaSummary.sellVolume)} <span className="text-base font-medium text-red-500">{tokenSymbol}</span>
+                  </div>
                 </div>
                 <div>
                   <div className="text-gray-400 text-sm">Limit Orders</div>
-                  <div className="text-xl">{tokenLoSummary.sellOrders}</div>
-                  <div className="text-4xl font-black tracking-tight text-red-400">{tokenLoSummary.sellVolume.toLocaleString()} <span className="text-base font-medium text-red-500">{tokenSymbol}</span></div>
+                  <div className="text-xl">{formatNumber(tokenLoSummary.sellOrders)}</div>
+                  <div className="text-4xl font-black tracking-tight text-red-400">
+                    {formatNumber(tokenLoSummary.sellVolume)} <span className="text-base font-medium text-red-500">{tokenSymbol}</span>
+                  </div>
                 </div>
               </>
             ) : (
               <>
-                <div className="text-2xl font-bold">{displayStats.sellOrders}</div>
+                <div className="text-2xl font-bold">{formatNumber(displayStats.sellOrders)}</div>
                 <div className="text-gray-400">Sell Volume</div>
-                <div className="text-4xl font-black tracking-tight text-red-400">{displayStats.sellVolume.toLocaleString()} <span className="text-base font-medium text-red-500">{tokenSymbol}</span></div>
-                <div className="text-sm text-gray-400">${(displayStats.sellVolume * currentPrice).toFixed(2)}</div>
+                <div className="text-4xl font-black tracking-tight text-red-400">
+                  {formatNumber(displayStats.sellVolume)} <span className="text-base font-medium text-red-500">{tokenSymbol}</span>
+                </div>
+                <div className="text-sm text-gray-400">${formatCurrency(displayStats.sellVolume * currentPrice)}</div>
               </>
             )}
           </div>

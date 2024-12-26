@@ -21,9 +21,14 @@ export function LimitOrderCard({ order }: LimitOrderCardProps) {
   // Format amounts based on token type
   const formatAmount = (value: number, symbol: string) => {
     if (symbol === 'CHAOS' || symbol === 'LOGOS') {
-      return Math.round(value).toLocaleString()
+      return Math.round(value).toLocaleString('en-US', { maximumFractionDigits: 0 })
     }
-    return value.toLocaleString()
+    return value.toLocaleString('en-US', { maximumFractionDigits: 2 })
+  }
+
+  // Format price with consistent decimals
+  const formatPrice = (value: number) => {
+    return value.toLocaleString('en-US', { minimumFractionDigits: 6, maximumFractionDigits: 6 })
   }
 
   // Format date to be more readable
@@ -55,7 +60,7 @@ export function LimitOrderCard({ order }: LimitOrderCardProps) {
 
       <div className="space-y-2 text-sm">
         <div>Amount: {formatAmount(amount, amountSymbol)} {amountSymbol}</div>
-        <div>Price: {order.price.toFixed(6)} {isBuy ? order.inputMint.symbol : order.outputMint.symbol}</div>
+        <div>Price: {formatPrice(order.price)} {isBuy ? order.inputMint.symbol : order.outputMint.symbol}</div>
         <div>Total: {formatAmount(total, totalSymbol)} {totalSymbol}</div>
       </div>
     </div>
