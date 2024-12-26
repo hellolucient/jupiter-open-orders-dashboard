@@ -100,12 +100,22 @@ export class JupiterLimitOrdersAPI {
       }
     };
 
-    const createdAt = getTimestamp(282);
-    const updatedAt = getTimestamp(290);
-
-    // Check for expiry
+    // Check for expiry first
     const expiredAtDiscriminator = data[248];
     let expiredAt: string | undefined;
+
+    // Calculate offsets based on expiredAt length
+    const expiredAtLength = expiredAtDiscriminator === 1 ? 9 : 1;
+    const feeBpsStart = 248 + expiredAtLength;  // feeBps is 2 bytes
+    const feeAccountStart = feeBpsStart + 2;    // feeAccount is 32 bytes
+    const createdAtStart = feeAccountStart + 32; // createdAt is 8 bytes
+    const updatedAtStart = createdAtStart + 8;   // updatedAt is 8 bytes
+
+    // Parse timestamps with correct offsets
+    const createdAt = getTimestamp(createdAtStart);
+    const updatedAt = getTimestamp(updatedAtStart);
+
+    // Parse expiredAt if it exists
     if (expiredAtDiscriminator === 1) {
       expiredAt = getTimestamp(249);
     }

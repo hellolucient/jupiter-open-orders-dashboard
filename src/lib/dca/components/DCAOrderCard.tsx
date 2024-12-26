@@ -28,6 +28,51 @@ export function DCAOrderCard({
   const dotColorClass = isBuy ? 'bg-green-500' : 'bg-red-500'
   const orderType = isBuy ? 'BUY' : 'SELL'
 
+  // Format date to be more readable
+  const formatDate = (dateStr: string) => {
+    try {
+      // Parse local time format DD/MM/YYYY, HH:mm:ss
+      const [datePart, timePart] = dateStr.split(', ');
+      const [day, month, year] = datePart.split('/');
+      const [hours, minutes, seconds] = timePart.split(':');
+
+      // First create date in local time
+      const localDate = new Date(
+        parseInt(year),
+        parseInt(month) - 1,  // months are 0-based
+        parseInt(day),
+        parseInt(hours),
+        parseInt(minutes),
+        parseInt(seconds)
+      );
+
+      // Get the UTC time values
+      const utcYear = localDate.getUTCFullYear();
+      const utcMonth = localDate.getUTCMonth();
+      const utcDay = localDate.getUTCDate();
+      const utcHours = localDate.getUTCHours();
+      const utcMinutes = localDate.getUTCMinutes();
+      const utcSeconds = localDate.getUTCSeconds();
+
+      // Create a new date with UTC values
+      const utcDate = new Date(Date.UTC(utcYear, utcMonth, utcDay, utcHours, utcMinutes, utcSeconds));
+
+      // Format in UTC
+      return new Intl.DateTimeFormat('en-US', {
+        timeZone: 'UTC',
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric',
+        hour12: true,
+        timeZoneName: 'short'
+      }).format(utcDate);
+    } catch (error) {
+      console.error('Error formatting date:', error, dateStr);
+      return dateStr; // Return original string if parsing fails
+    }
+  }
+
   return (
     <div className={`p-4 bg-gray-800 rounded-lg mb-3 border ${
       isBuy ? 'border-green-500/20' : 'border-red-500/20'
@@ -38,7 +83,7 @@ export function DCAOrderCard({
           <span className={`ml-2 font-medium ${colorClass}`}>{orderType}</span>
         </div>
         <div className="text-gray-400 text-sm">
-          {timestamp}
+          {formatDate(timestamp)}
         </div>
       </div>
 
