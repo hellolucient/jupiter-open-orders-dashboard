@@ -210,7 +210,7 @@ export function TokenSection({ tokenSymbol, currentPrice, mode = 'all', autoRefr
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {mode === 'limit' && (
             <>
               <div>
@@ -250,14 +250,14 @@ export function TokenSection({ tokenSymbol, currentPrice, mode = 'all', autoRefr
                     <DCAOrderCard
                       key={order.id}
                       type="buy"
-                      totalAmount={`${order.totalAmount} ${order.inputToken}`}
+                      totalAmount={`${formatNumber(order.totalAmount)} ${order.inputToken}`}
                       splitInfo={`${order.totalCycles} orders (${order.remainingCycles} remaining)`}
-                      orderSize={`${order.amountPerCycle} ${order.inputToken} per cycle`}
+                      orderSize={`${formatNumber(order.amountPerCycle)} ${order.inputToken} per cycle`}
                       frequency={`Every ${order.cycleFrequency}s`}
                       status={order.isActive ? "Active" : "Inactive"}
-                      remainingAmount={`~${order.remainingAmount} ${order.inputToken}`}
+                      remainingAmount={`~${formatNumber(order.remainingAmount)} ${order.inputToken}`}
                       timestamp={new Date(order.lastUpdate).toLocaleString()}
-                      estimatedOutput={`~${Math.round(order.estimatedTokens).toLocaleString()} ${order.outputToken}`}
+                      estimatedOutput={`~${formatNumber(order.estimatedTokens)} ${order.outputToken}`}
                     />
                   ))
                 ) : (
@@ -271,14 +271,14 @@ export function TokenSection({ tokenSymbol, currentPrice, mode = 'all', autoRefr
                     <DCAOrderCard
                       key={order.id}
                       type="sell"
-                      totalAmount={`${order.totalAmount} ${tokenSymbol}`}
+                      totalAmount={`${formatNumber(order.totalAmount)} ${tokenSymbol}`}
                       splitInfo={`${order.totalCycles} orders (${order.remainingCycles} remaining)`}
-                      orderSize={`${order.amountPerCycle} ${tokenSymbol} per cycle`}
+                      orderSize={`${formatNumber(order.amountPerCycle)} ${tokenSymbol} per cycle`}
                       frequency={`Every ${order.cycleFrequency}s`}
                       status={order.isActive ? "Active" : "Inactive"}
-                      remainingAmount={`~${order.remainingAmount} ${tokenSymbol}`}
+                      remainingAmount={`~${formatNumber(order.remainingAmount)} ${tokenSymbol}`}
                       timestamp={new Date(order.lastUpdate).toLocaleString()}
-                      estimatedOutput={`~${Math.round(order.estimatedTokens).toLocaleString()} ${order.outputToken}`}
+                      estimatedOutput={`~${formatNumber(order.estimatedTokens)} ${order.outputToken}`}
                     />
                   ))
                 ) : (
@@ -297,28 +297,28 @@ export function TokenSection({ tokenSymbol, currentPrice, mode = 'all', autoRefr
                       <DCAOrderCard
                         key={order.id}
                         type="buy"
-                        totalAmount={`${order.totalAmount} ${order.inputToken}`}
+                        totalAmount={`${formatNumber(order.totalAmount)} ${order.inputToken}`}
                         splitInfo={`${order.totalCycles} orders (${order.remainingCycles} remaining)`}
-                        orderSize={`${order.amountPerCycle} ${order.inputToken} per cycle`}
+                        orderSize={`${formatNumber(order.amountPerCycle)} ${order.inputToken} per cycle`}
                         frequency={`Every ${order.cycleFrequency}s`}
                         status={order.isActive ? "Active" : "Inactive"}
-                        remainingAmount={`~${order.remainingAmount} ${order.inputToken}`}
+                        remainingAmount={`~${formatNumber(order.remainingAmount)} ${order.inputToken}`}
                         timestamp={new Date(order.lastUpdate).toLocaleString()}
-                        estimatedOutput={`~${Math.round(order.estimatedTokens).toLocaleString()} ${order.outputToken}`}
+                        estimatedOutput={`~${formatNumber(order.estimatedTokens)} ${order.outputToken}`}
                       />
                     ))}
                     {dcaSellOrders.map(order => (
                       <DCAOrderCard
                         key={order.id}
                         type="sell"
-                        totalAmount={`${order.totalAmount} ${tokenSymbol}`}
+                        totalAmount={`${formatNumber(order.totalAmount)} ${tokenSymbol}`}
                         splitInfo={`${order.totalCycles} orders (${order.remainingCycles} remaining)`}
-                        orderSize={`${order.amountPerCycle} ${tokenSymbol} per cycle`}
+                        orderSize={`${formatNumber(order.amountPerCycle)} ${tokenSymbol} per cycle`}
                         frequency={`Every ${order.cycleFrequency}s`}
                         status={order.isActive ? "Active" : "Inactive"}
-                        remainingAmount={`~${order.remainingAmount} ${tokenSymbol}`}
+                        remainingAmount={`~${formatNumber(order.remainingAmount)} ${tokenSymbol}`}
                         timestamp={new Date(order.lastUpdate).toLocaleString()}
-                        estimatedOutput={`~${Math.round(order.estimatedTokens).toLocaleString()} ${order.outputToken}`}
+                        estimatedOutput={`~${formatNumber(order.estimatedTokens)} ${order.outputToken}`}
                       />
                     ))}
                   </>
