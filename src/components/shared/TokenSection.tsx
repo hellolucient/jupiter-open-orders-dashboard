@@ -30,17 +30,6 @@ export function TokenSection({ tokenSymbol, currentPrice, mode = 'all', autoRefr
     (order.inputMint.symbol === tokenSymbol || order.outputMint.symbol === tokenSymbol)
   ), [orders, tokenSymbol]);
 
-  // Split into buy and sell orders
-  const buyOrders = useMemo(() => 
-    tokenOrders.filter(order => order.orderType === 'BUY'), 
-    [tokenOrders]
-  );
-  
-  const sellOrders = useMemo(() => 
-    tokenOrders.filter(order => order.orderType === 'SELL'),
-    [tokenOrders]
-  );
-
   // Sort orders by amount and date
   const sortLimitOrders = (orders: LimitOrder[], option: SortOption): LimitOrder[] => {
     return [...orders].sort((a, b) => {
@@ -71,13 +60,13 @@ export function TokenSection({ tokenSymbol, currentPrice, mode = 'all', autoRefr
 
   // Update the sorted orders
   const sortedBuyOrders = useMemo(() => 
-    sortLimitOrders(orders?.filter(o => o.orderType === 'BUY') || [], sortOption),
-    [orders, sortOption]
+    sortLimitOrders(tokenOrders.filter(o => o.orderType === 'BUY'), sortOption),
+    [tokenOrders, sortOption]
   )
 
   const sortedSellOrders = useMemo(() => 
-    sortLimitOrders(orders?.filter(o => o.orderType === 'SELL') || [], sortOption),
-    [orders, sortOption]
+    sortLimitOrders(tokenOrders.filter(o => o.orderType === 'SELL'), sortOption),
+    [tokenOrders, sortOption]
   )
 
   // Filter DCA positions for the current token
