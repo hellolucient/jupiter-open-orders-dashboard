@@ -44,8 +44,7 @@ export interface LimitOrderAccountType {
   }
 }
 
-// Extend the base token summary
-export interface LimitOrderSummary extends TokenSummaryBase {}
+export type LimitOrderSummary = TokenSummaryBase
 
 export interface OrderAnalysis {
   maker: string

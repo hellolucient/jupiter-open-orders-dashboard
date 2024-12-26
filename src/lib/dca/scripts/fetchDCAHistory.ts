@@ -1,8 +1,8 @@
 import { Connection, PublicKey } from '@solana/web3.js'
 import { DCA, Network } from '@jup-ag/dca-sdk'
 import fs from 'fs'
-import { TOKENS } from '../lib/shared/tokenConfig'
-import { toDecimalAmount } from '../lib/shared/tokenConfig'
+import { TOKENS } from '@/lib/shared/tokenConfig'
+import { toDecimalAmount } from '@/lib/shared/tokenConfig'
 import dotenv from 'dotenv'
 
 // Load environment variables
@@ -11,7 +11,6 @@ dotenv.config()
 // Initialize constants
 const LOGOS_MINT = new PublicKey(TOKENS.LOGOS.address)
 const CHAOS_MINT = new PublicKey(TOKENS.CHAOS.address)
-const USDC_MINT = new PublicKey(TOKENS.USDC.address)
 
 async function fetchDCAHistory() {
   // Initialize connection and DCA client
@@ -59,7 +58,7 @@ async function fetchDCAHistory() {
     // Process buy orders
     output += 'Buy Orders\n----------\n'
     let totalBuyVolume = 0
-    let totalBuyOrders = buyOrders.length
+    const totalBuyOrders = buyOrders.length
 
     for (const order of buyOrders) {
       const inAmount = order.account.inAmountPerCycle.toNumber()
@@ -88,7 +87,7 @@ async function fetchDCAHistory() {
     // Process sell orders
     output += 'Sell Orders\n-----------\n'
     let totalSellVolume = 0
-    let totalSellOrders = sellOrders.length
+    const totalSellOrders = sellOrders.length
 
     for (const order of sellOrders) {
       const inAmount = order.account.inAmountPerCycle.toNumber()
@@ -117,8 +116,8 @@ async function fetchDCAHistory() {
   }
 
   // Write output to file
-  fs.writeFileSync('dca_history.txt', output)
-  console.log('DCA history has been written to dca_history.txt')
+  fs.writeFileSync('data/dca/dca_history.txt', output)
+  console.log('DCA history has been written to data/dca/dca_history.txt')
 }
 
 // Run the script

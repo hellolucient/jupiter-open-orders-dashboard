@@ -34,8 +34,7 @@ export interface Position extends BasePosition {
   remainingInCycle: number
 }
 
-// Extend the base token summary
-export interface TokenSummary extends TokenSummaryBase {}
+export type TokenSummary = TokenSummaryBase
 
 export type { ChartDataPoint }
 
