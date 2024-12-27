@@ -175,40 +175,83 @@ export class JupiterLimitOrdersAPI {
     return order;
   };
 
+  private async retryGetProgramAccounts(filters: any[], maxAttempts = 3, delayMs = 1000): Promise<readonly { pubkey: PublicKey; account: { data: Buffer } }[]> {
+    const orderType = filters[1].memcmp.offset === 40 ? 'SELL' : 'BUY';
+    const tokenType = filters[1].memcmp.bytes === new PublicKey(TOKENS.CHAOS.address).toBase58() ? 'CHAOS' : 'LOGOS';
+    let maxOrdersSeen = 0;
+    let bestResult: readonly { pubkey: PublicKey; account: { data: Buffer } }[] = [];
+    
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        console.log(`🔄 Attempt ${attempt} for ${tokenType} ${orderType} orders...`);
+        const accounts = await this.connection.getProgramAccounts(JUPITER_LIMIT_PROGRAM_ID, {
+          filters
+        });
+        console.log(`✅ ${tokenType} ${orderType}: Got ${accounts.length} orders on attempt ${attempt}`);
+        
+        // If we got more orders than before, update our best result
+        if (accounts.length > maxOrdersSeen) {
+          maxOrdersSeen = accounts.length;
+          bestResult = accounts;
+          // If this isn't our last attempt, try again to see if we can get even more
+          if (attempt < maxAttempts) {
+            console.log(`📈 ${tokenType} ${orderType}: New max found (${accounts.length}), trying again...`);
+            await new Promise(resolve => setTimeout(resolve, delayMs));
+            continue;
+          }
+        }
+        // If we got fewer orders than our max and we have more attempts, try again
+        if (accounts.length < maxOrdersSeen && attempt < maxAttempts) {
+          console.log(`📉 ${tokenType} ${orderType}: Got fewer orders than max (${accounts.length} vs ${maxOrdersSeen}), trying again...`);
+          await new Promise(resolve => setTimeout(resolve, delayMs));
+          continue;
+        }
+        // Return our best result
+        return bestResult.length > 0 ? bestResult : accounts;
+      } catch (error) {
+        if (attempt === maxAttempts) throw error;
+        console.warn(`❌ ${tokenType} ${orderType}: Attempt ${attempt} failed, retrying in ${delayMs}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
+    }
+    console.warn(`⚠️ ${tokenType} ${orderType}: All attempts failed, returning empty array`);
+    return [];
+  }
+
   async getLimitOrders(): Promise<LimitOrder[]> {
     try {
+      console.log('🚀 Starting to fetch limit orders...');
       const CHAOS_MINT = new PublicKey(TOKENS.CHAOS.address);
       const LOGOS_MINT = new PublicKey(TOKENS.LOGOS.address);
 
-      // Fetch all orders in parallel
+      // Fetch all orders in parallel with retry mechanism
       const [chaosSellOrders, logosSellOrders, chaosBuyOrders, logosBuyOrders] = await Promise.all([
         // Sell orders (CHAOS/LOGOS as input)
-        this.connection.getProgramAccounts(JUPITER_LIMIT_PROGRAM_ID, {
-          filters: [
-            { dataSize: 372 },
-            { memcmp: { offset: 40, bytes: CHAOS_MINT.toBase58() }}
-          ]
-        }),
-        this.connection.getProgramAccounts(JUPITER_LIMIT_PROGRAM_ID, {
-          filters: [
-            { dataSize: 372 },
-            { memcmp: { offset: 40, bytes: LOGOS_MINT.toBase58() }}
-          ]
-        }),
+        this.retryGetProgramAccounts([
+          { dataSize: 372 },
+          { memcmp: { offset: 40, bytes: CHAOS_MINT.toBase58() }}
+        ]),
+        this.retryGetProgramAccounts([
+          { dataSize: 372 },
+          { memcmp: { offset: 40, bytes: LOGOS_MINT.toBase58() }}
+        ]),
         // Buy orders (CHAOS/LOGOS as output)
-        this.connection.getProgramAccounts(JUPITER_LIMIT_PROGRAM_ID, {
-          filters: [
-            { dataSize: 372 },
-            { memcmp: { offset: 72, bytes: CHAOS_MINT.toBase58() }}
-          ]
-        }),
-        this.connection.getProgramAccounts(JUPITER_LIMIT_PROGRAM_ID, {
-          filters: [
-            { dataSize: 372 },
-            { memcmp: { offset: 72, bytes: LOGOS_MINT.toBase58() }}
-          ]
-        })
+        this.retryGetProgramAccounts([
+          { dataSize: 372 },
+          { memcmp: { offset: 72, bytes: CHAOS_MINT.toBase58() }}
+        ]),
+        this.retryGetProgramAccounts([
+          { dataSize: 372 },
+          { memcmp: { offset: 72, bytes: LOGOS_MINT.toBase58() }}
+        ])
       ]);
+
+      console.log('📊 Raw order counts:', {
+        chaosSell: chaosSellOrders.length,
+        logosSell: logosSellOrders.length,
+        chaosBuy: chaosBuyOrders.length,
+        logosBuy: logosBuyOrders.length
+      });
 
       // Parse all orders
       const orders = await Promise.all([
@@ -218,6 +261,14 @@ export class JupiterLimitOrdersAPI {
         ...logosBuyOrders.map(o => this.parseRawOrder(o.pubkey, o.account.data, 'BUY'))
       ]);
 
+      // Log final counts by type
+      const finalCounts = orders.reduce((acc, order) => {
+        const key = `${order.tokenType}_${order.orderType}`;
+        acc[key] = (acc[key] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+
+      console.log('📈 Final parsed order counts:', finalCounts);
       return orders;
     } catch (error) {
       console.error('Error fetching limit orders:', error);
