@@ -136,34 +136,27 @@ export function DCAOrderCard({
           <div className="text-gray-400">Remaining Amount</div>
           <div className="text-right">{remainingAmount}</div>
         </div>
-        {isBuy ? (
+        {isBuy && (
           <>
-            {minExecutionPrice && maxExecutionPrice && (
-              <>
-                <div className="grid grid-cols-2">
-                  <div className="text-gray-400">Min. Execution Price</div>
-                  <div className="text-right">{formatPrice(minExecutionPrice)} {priceToken}</div>
-                </div>
-                {minEstimatedOutput && (
-                  <div className="grid grid-cols-2">
-                    <div className="text-gray-400">Min. Estimated Output</div>
-                    <div className="text-right">{minEstimatedOutput}</div>
-                  </div>
-                )}
-                <div className="grid grid-cols-2">
-                  <div className="text-gray-400">Max. Execution Price</div>
-                  <div className="text-right">{formatPrice(maxExecutionPrice)} {priceToken}</div>
-                </div>
-                {maxEstimatedOutput && (
-                  <div className="grid grid-cols-2">
-                    <div className="text-gray-400">Max. Estimated Output</div>
-                    <div className="text-right">{maxEstimatedOutput}</div>
-                  </div>
-                )}
-              </>
-            )}
+            <div className="grid grid-cols-2">
+              <div className="text-gray-400">Min. Execution Price</div>
+              <div className="text-right">{minExecutionPrice ? `${formatPrice(minExecutionPrice)} ${priceToken}` : 'N/A'}</div>
+            </div>
+            <div className="grid grid-cols-2">
+              <div className="text-gray-400">Max. Estimated Output</div>
+              <div className="text-right">{maxEstimatedOutput || 'N/A'}</div>
+            </div>
+            <div className="grid grid-cols-2">
+              <div className="text-gray-400">Max. Execution Price</div>
+              <div className="text-right">{maxExecutionPrice ? `${formatPrice(maxExecutionPrice)} ${priceToken}` : 'N/A'}</div>
+            </div>
+            <div className="grid grid-cols-2">
+              <div className="text-gray-400">Min. Estimated Output</div>
+              <div className="text-right">{minEstimatedOutput || 'N/A'}</div>
+            </div>
           </>
-        ) : (
+        )}
+        {!isBuy && (
           <>
             {minExecutionPrice && (
               <div className="grid grid-cols-2">
