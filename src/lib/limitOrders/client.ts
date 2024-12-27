@@ -225,26 +225,20 @@ export class JupiterLimitOrdersAPI {
       const CHAOS_MINT = new PublicKey(TOKENS.CHAOS.address);
       const LOGOS_MINT = new PublicKey(TOKENS.LOGOS.address);
 
+      const dataSize: GetProgramAccountsFilter = { dataSize: 372 };
+      const chaosInputFilter: GetProgramAccountsFilter = { memcmp: { offset: 40, bytes: CHAOS_MINT.toBase58() }};
+      const logosInputFilter: GetProgramAccountsFilter = { memcmp: { offset: 40, bytes: LOGOS_MINT.toBase58() }};
+      const chaosOutputFilter: GetProgramAccountsFilter = { memcmp: { offset: 72, bytes: CHAOS_MINT.toBase58() }};
+      const logosOutputFilter: GetProgramAccountsFilter = { memcmp: { offset: 72, bytes: LOGOS_MINT.toBase58() }};
+
       // Fetch all orders in parallel with retry mechanism
       const [chaosSellOrders, logosSellOrders, chaosBuyOrders, logosBuyOrders] = await Promise.all([
         // Sell orders (CHAOS/LOGOS as input)
-        this.retryGetProgramAccounts([
-          { dataSize: 372 },
-          { memcmp: { offset: 40, bytes: CHAOS_MINT.toBase58() }}
-        ]),
-        this.retryGetProgramAccounts([
-          { dataSize: 372 },
-          { memcmp: { offset: 40, bytes: LOGOS_MINT.toBase58() }}
-        ]),
+        this.retryGetProgramAccounts([dataSize, chaosInputFilter]),
+        this.retryGetProgramAccounts([dataSize, logosInputFilter]),
         // Buy orders (CHAOS/LOGOS as output)
-        this.retryGetProgramAccounts([
-          { dataSize: 372 },
-          { memcmp: { offset: 72, bytes: CHAOS_MINT.toBase58() }}
-        ]),
-        this.retryGetProgramAccounts([
-          { dataSize: 372 },
-          { memcmp: { offset: 72, bytes: LOGOS_MINT.toBase58() }}
-        ])
+        this.retryGetProgramAccounts([dataSize, chaosOutputFilter]),
+        this.retryGetProgramAccounts([dataSize, logosOutputFilter])
       ]);
 
       console.log('📊 Raw order counts:', {
