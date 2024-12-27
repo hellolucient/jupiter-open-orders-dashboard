@@ -1,4 +1,4 @@
-import { Connection, PublicKey } from '@solana/web3.js';
+import { Connection, PublicKey, GetProgramAccountsFilter } from '@solana/web3.js';
 import { TOKENS } from './tokenConfig';
 import { LimitOrder, TokenInfo } from './types';
 
@@ -175,9 +175,10 @@ export class JupiterLimitOrdersAPI {
     return order;
   };
 
-  private async retryGetProgramAccounts(filters: any[], maxAttempts = 3, delayMs = 1000): Promise<readonly { pubkey: PublicKey; account: { data: Buffer } }[]> {
-    const orderType = filters[1].memcmp.offset === 40 ? 'SELL' : 'BUY';
-    const tokenType = filters[1].memcmp.bytes === new PublicKey(TOKENS.CHAOS.address).toBase58() ? 'CHAOS' : 'LOGOS';
+  private async retryGetProgramAccounts(filters: GetProgramAccountsFilter[], maxAttempts = 3, delayMs = 1000): Promise<readonly { pubkey: PublicKey; account: { data: Buffer } }[]> {
+    const memcmpFilter = filters[1] as { memcmp: { offset: number, bytes: string } };
+    const orderType = memcmpFilter.memcmp.offset === 40 ? 'SELL' : 'BUY';
+    const tokenType = memcmpFilter.memcmp.bytes === new PublicKey(TOKENS.CHAOS.address).toBase58() ? 'CHAOS' : 'LOGOS';
     let maxOrdersSeen = 0;
     let bestResult: readonly { pubkey: PublicKey; account: { data: Buffer } }[] = [];
     
