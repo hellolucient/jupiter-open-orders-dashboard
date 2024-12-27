@@ -10,6 +10,12 @@ interface DCAOrderCardProps {
   remainingAmount: string
   timestamp: string
   estimatedOutput?: string
+  executionPrice?: number
+  minExecutionPrice?: number
+  maxExecutionPrice?: number
+  minEstimatedOutput?: string
+  maxEstimatedOutput?: string
+  priceToken?: string
 }
 
 export function DCAOrderCard({
@@ -21,7 +27,13 @@ export function DCAOrderCard({
   status,
   remainingAmount,
   timestamp,
-  estimatedOutput
+  estimatedOutput,
+  executionPrice,
+  minExecutionPrice,
+  maxExecutionPrice,
+  minEstimatedOutput,
+  maxEstimatedOutput,
+  priceToken
 }: DCAOrderCardProps) {
   const isBuy = type === 'buy'
   const colorClass = isBuy ? 'text-green-500' : 'text-red-500'
@@ -73,6 +85,16 @@ export function DCAOrderCard({
     }
   }
 
+  // Format price with consistent decimals
+  const formatPrice = (value: number | undefined) => {
+    if (typeof value === 'undefined') return 'Market Price'
+    // For very small numbers (less than 0.000001), show more decimal places
+    if (value > 0 && value < 0.000001) {
+      return value.toLocaleString('en-US', { minimumFractionDigits: 12, maximumFractionDigits: 12 })
+    }
+    return value.toLocaleString('en-US', { minimumFractionDigits: 6, maximumFractionDigits: 6 })
+  }
+
   return (
     <div className={`p-4 bg-gray-800 rounded-lg mb-3 border ${
       isBuy ? 'border-green-500/20' : 'border-red-500/20'
@@ -114,11 +136,48 @@ export function DCAOrderCard({
           <div className="text-gray-400">Remaining Amount</div>
           <div className="text-right">{remainingAmount}</div>
         </div>
-        {estimatedOutput && (
-          <div className="grid grid-cols-2">
-            <div className="text-gray-400">Estimated Output</div>
-            <div className="text-right">{estimatedOutput}</div>
-          </div>
+        {isBuy ? (
+          <>
+            {minExecutionPrice && maxExecutionPrice && (
+              <>
+                <div className="grid grid-cols-2">
+                  <div className="text-gray-400">Min. Execution Price</div>
+                  <div className="text-right">{formatPrice(minExecutionPrice)} {priceToken}</div>
+                </div>
+                {minEstimatedOutput && (
+                  <div className="grid grid-cols-2">
+                    <div className="text-gray-400">Min. Estimated Output</div>
+                    <div className="text-right">{minEstimatedOutput}</div>
+                  </div>
+                )}
+                <div className="grid grid-cols-2">
+                  <div className="text-gray-400">Max. Execution Price</div>
+                  <div className="text-right">{formatPrice(maxExecutionPrice)} {priceToken}</div>
+                </div>
+                {maxEstimatedOutput && (
+                  <div className="grid grid-cols-2">
+                    <div className="text-gray-400">Max. Estimated Output</div>
+                    <div className="text-right">{maxEstimatedOutput}</div>
+                  </div>
+                )}
+              </>
+            )}
+          </>
+        ) : (
+          <>
+            {minExecutionPrice && (
+              <div className="grid grid-cols-2">
+                <div className="text-gray-400">Execution Price</div>
+                <div className="text-right">{formatPrice(minExecutionPrice)} {priceToken}</div>
+              </div>
+            )}
+            {estimatedOutput && (
+              <div className="grid grid-cols-2">
+                <div className="text-gray-400">Estimated Output</div>
+                <div className="text-right">{estimatedOutput}</div>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

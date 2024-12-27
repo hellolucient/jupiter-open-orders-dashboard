@@ -28,6 +28,10 @@ export function LimitOrderCard({ order }: LimitOrderCardProps) {
 
   // Format price with consistent decimals
   const formatPrice = (value: number) => {
+    // For very small numbers (less than 0.000001), show more decimal places
+    if (value > 0 && value < 0.000001) {
+      return value.toLocaleString('en-US', { minimumFractionDigits: 12, maximumFractionDigits: 12 })
+    }
     return value.toLocaleString('en-US', { minimumFractionDigits: 6, maximumFractionDigits: 6 })
   }
 
@@ -35,16 +39,19 @@ export function LimitOrderCard({ order }: LimitOrderCardProps) {
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr)
     return date.toLocaleString('en-US', {
+      timeZone: 'UTC',
       month: 'short',
       day: 'numeric',
       hour: 'numeric',
       minute: 'numeric',
-      hour12: true
+      hour12: true,
+      timeZoneName: 'short'
     })
   }
 
   const amountSymbol = isBuy ? order.outputMint.symbol : order.inputMint.symbol
   const totalSymbol = isBuy ? order.inputMint.symbol : order.outputMint.symbol
+  const priceSymbol = isBuy ? `${totalSymbol}/${amountSymbol}` : `${totalSymbol}/${amountSymbol}`
 
   return (
     <div className="bg-gray-800 rounded-lg p-4 mb-3">
@@ -64,8 +71,8 @@ export function LimitOrderCard({ order }: LimitOrderCardProps) {
           <span>{formatAmount(amount, amountSymbol)} {amountSymbol}</span>
         </div>
         <div className="flex justify-between">
-          <span>Price:</span>
-          <span>{formatPrice(order.price)} {isBuy ? order.inputMint.symbol : order.outputMint.symbol}</span>
+          <span>Execution Price:</span>
+          <span>{formatPrice(order.price)} {priceSymbol}</span>
         </div>
         <div className="flex justify-between">
           <span>Total:</span>

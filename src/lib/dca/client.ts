@@ -1,6 +1,6 @@
 import { DCA, Network } from '@jup-ag/dca-sdk'
 import { Connection, PublicKey } from '@solana/web3.js'
-import type { TokenSummary, Position, ChartDataPoint, DCAAccountType } from './types'
+import type { TokenSummary, Position, ChartDataPoint, DCAAccountType } from './types/index'
 import { TOKENS, getTokenByMint, toDecimalAmount } from '../shared/tokenConfig'
 
 const LOGOS_MINT = TOKENS.LOGOS.address
@@ -49,20 +49,39 @@ export class JupiterDCAAPI {
   }
 
   private async getCurrentPrice(mint: string): Promise<{ price: number; mint: string }> {
-    try {
-      const response = await fetch(`${this.jupiterApiUrl}?ids=${mint}`)
-      const data = await response.json()
-      
-      const price = data.data?.[mint]?.price || 0
-      console.log(`Price fetched for ${mint}:`, price)
-      return {
-        price: Number(price),
-        mint
+    const maxRetries = 3;
+    let lastError: unknown;
+
+    for (let i = 0; i < maxRetries; i++) {
+      try {
+        const response = await fetch(`${this.jupiterApiUrl}?ids=${mint}`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const price = data.data?.[mint]?.price || 0;
+        return {
+          price: Number(price),
+          mint
+        };
+      } catch (error) {
+        console.error(`Attempt ${i + 1} failed to fetch price for ${mint}:`, error);
+        lastError = error;
+        if (i < maxRetries - 1) {
+          await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+        }
       }
-    } catch (error) {
-      console.error('Error fetching price:', error)
-      return { price: 0, mint }
     }
+
+    console.error('All retries failed for price fetch:', lastError);
+    return { price: 0, mint };
   }
 
   private async getPriceInToken(mint: string, inputToken: string): Promise<number> {
@@ -207,63 +226,129 @@ export class JupiterDCAAPI {
     // Use actual input token symbol instead of assuming USDC
     const inputTokenSymbol = inputToken?.symbol ?? (type === "BUY" ? "USDC" : token)
     const outputTokenSymbol = outputToken?.symbol ?? (type === "BUY" ? token : "USDC")
+    const priceToken = `${type === "BUY" ? inputTokenSymbol : outputTokenSymbol}/${type === "BUY" ? outputTokenSymbol : inputTokenSymbol}`
 
     // Calculate execution price from minOutAmount for buy orders
     let executionPrice: number | undefined
     let estimatedTokens = 0
 
     if (type === "BUY") {
-      if (minOutAmount > 0) {
-        // For buy orders, execution price is inAmountPerCycle / minOutAmount (per cycle)
-        executionPrice = toDecimalAmount(rawInAmount, inputDecimals) / toDecimalAmount(minOutAmount, outputDecimals)
-        // Calculate estimated output based on minOutAmount
-        estimatedTokens = toDecimalAmount(rawRemainingAmount, inputDecimals) / executionPrice
-      } else {
-        // If no minOutAmount, use market price
-        executionPrice = priceInInputToken
-        estimatedTokens = toDecimalAmount(rawRemainingAmount, inputDecimals) / priceInInputToken
-      }
-      console.log(`DCA ${type} Order execution price calculation:`, {
-        rawInAmount,
-        minOutAmount,
-        executionPrice,
-        priceInInputToken,
-        remainingAmount: toDecimalAmount(rawRemainingAmount, inputDecimals),
-        estimatedTokens
-      })
-    } else {
-      // For sell orders, use maxOutAmount if available
-      if (maxOutAmount > 0) {
-        executionPrice = toDecimalAmount(maxOutAmount, outputDecimals) / toDecimalAmount(rawInAmount, inputDecimals)
-      }
-      // For sell orders, just use the remaining amount in the input token
-      estimatedTokens = toDecimalAmount(rawRemainingAmount, outputDecimals)
-    }
+      // For buy orders, calculate min and max execution prices if limits are set
+      let minExecutionPrice: number | undefined
+      let maxExecutionPrice: number | undefined
+      let minEstimatedTokens = 0
+      let maxEstimatedTokens = 0
 
-    return {
-      id: account.publicKey.toString(),
-      token,
-      type,
-      inputToken: inputTokenSymbol,
-      outputToken: outputTokenSymbol,
-      inputAmount: toDecimalAmount(rawInAmount, inputDecimals),
-      totalAmount: toDecimalAmount(rawTotalAmount, inputDecimals),
-      remainingAmount: toDecimalAmount(rawRemainingAmount, inputDecimals),
-      amountPerCycle: toDecimalAmount(rawInAmount, inputDecimals),
-      totalCycles,
-      completedCycles,
-      remainingCycles,
-      remainingInCycle: toDecimalAmount(rawInAmount, inputDecimals),
-      cycleFrequency: isDcaOrder ? account.account.cycleFrequency.toNumber() : 0,
-      lastUpdate: nextCycleAt * 1000,
-      publicKey: account.publicKey.toString(),
-      targetPrice: price,
-      currentPrice: price,
-      priceToken: "USDC",
-      isActive: rawInUsed < rawTotalAmount,
-      maxPrice: "No limit",
-      estimatedTokens,
-      executionPrice: price
+      // Convert amounts to decimal for price calculation
+      const inAmountDecimal = toDecimalAmount(rawInAmount, inputDecimals)
+      
+      if (minOutAmount > 0 || maxOutAmount > 0) {
+        if (minOutAmount > 0) {
+          // Max execution price = inAmountPerCycle / minOutAmount
+          const minOutDecimal = toDecimalAmount(minOutAmount, outputDecimals)
+          maxExecutionPrice = inAmountDecimal / minOutDecimal
+          minEstimatedTokens = toDecimalAmount(rawRemainingAmount, inputDecimals) / maxExecutionPrice
+        }
+        
+        if (maxOutAmount > 0) {
+          // Min execution price = inAmountPerCycle / maxOutAmount
+          const maxOutDecimal = toDecimalAmount(maxOutAmount, outputDecimals)
+          minExecutionPrice = inAmountDecimal / maxOutDecimal
+          maxEstimatedTokens = toDecimalAmount(rawRemainingAmount, inputDecimals) / minExecutionPrice
+        }
+
+        console.log(`DCA ${type} Order execution price calculation:`, {
+          rawInAmount,
+          inAmountDecimal,
+          minOutAmount,
+          maxOutAmount,
+          minExecutionPrice,
+          maxExecutionPrice,
+          minEstimatedTokens,
+          maxEstimatedTokens,
+          remainingAmount: toDecimalAmount(rawRemainingAmount, inputDecimals)
+        })
+      } else {
+        // If no limits set, use market price
+        minExecutionPrice = priceInInputToken
+        maxExecutionPrice = priceInInputToken
+        minEstimatedTokens = toDecimalAmount(rawRemainingAmount, inputDecimals) / priceInInputToken
+        maxEstimatedTokens = minEstimatedTokens
+      }
+
+      return {
+        id: account.publicKey.toString(),
+        type,
+        token,
+        inputToken: inputTokenSymbol,
+        outputToken: outputTokenSymbol,
+        inputAmount: toDecimalAmount(rawInAmount, inputDecimals),
+        totalAmount: toDecimalAmount(rawTotalAmount, inputDecimals),
+        amountPerCycle: toDecimalAmount(rawInAmount, inputDecimals),
+        remainingCycles,
+        cycleFrequency: isDcaOrder ? account.account.cycleFrequency.toNumber() : 0,
+        lastUpdate: account.account.nextCycleAt.toNumber() * 1000,
+        publicKey: account.publicKey.toString(),
+        targetPrice: 0,
+        currentPrice: price,
+        priceToken,
+        estimatedOutput: minEstimatedTokens,  // Use min for backward compatibility
+        minEstimatedOutput: minEstimatedTokens,
+        maxEstimatedOutput: maxEstimatedTokens,
+        totalCycles,
+        completedCycles,
+        isActive: isDcaOrder && !isFlashFill && remainingCycles > 0,
+        remainingAmount: toDecimalAmount(rawRemainingAmount, inputDecimals),
+        minExecutionPrice,
+        maxExecutionPrice,
+        remainingInCycle: toDecimalAmount(rawInAmount, inputDecimals),
+        estimatedTokens: minEstimatedTokens
+      }
+    } else {
+      // For sell orders, use minOutAmount if available
+      if (minOutAmount > 0) {
+        // For sell orders, execution price is minOutAmount / inAmountPerCycle
+        // Use raw values to calculate price, no need to convert to decimal first
+        executionPrice = minOutAmount / rawInAmount
+        estimatedTokens = toDecimalAmount(rawRemainingAmount, inputDecimals) * executionPrice
+        
+        console.log(`DCA SELL Order execution price calculation:`, {
+          minOutAmount,
+          rawInAmount,
+          executionPrice,
+          remainingAmount: toDecimalAmount(rawRemainingAmount, inputDecimals),
+          estimatedTokens
+        })
+      } else {
+        executionPrice = priceInInputToken
+        estimatedTokens = toDecimalAmount(rawRemainingAmount, inputDecimals) * priceInInputToken
+      }
+
+      return {
+        id: account.publicKey.toString(),
+        type,
+        token,
+        inputToken: inputTokenSymbol,
+        outputToken: outputTokenSymbol,
+        inputAmount: toDecimalAmount(rawInAmount, inputDecimals),
+        totalAmount: toDecimalAmount(rawTotalAmount, inputDecimals),
+        amountPerCycle: toDecimalAmount(rawInAmount, inputDecimals),
+        remainingCycles,
+        cycleFrequency: isDcaOrder ? account.account.cycleFrequency.toNumber() : 0,
+        lastUpdate: account.account.nextCycleAt.toNumber() * 1000,
+        publicKey: account.publicKey.toString(),
+        targetPrice: 0,
+        currentPrice: price,
+        priceToken,
+        estimatedOutput: estimatedTokens,
+        totalCycles,
+        completedCycles,
+        isActive: isDcaOrder && !isFlashFill && remainingCycles > 0,
+        remainingAmount: toDecimalAmount(rawRemainingAmount, inputDecimals),
+        minExecutionPrice: executionPrice,  // For sell orders, min is the only price
+        remainingInCycle: toDecimalAmount(rawInAmount, inputDecimals),
+        estimatedTokens
+      }
     }
   }
 

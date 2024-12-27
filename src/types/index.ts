@@ -20,7 +20,7 @@ export type {
   Position,
   TokenSummary as DCATokenSummary,
   DCAAccountType
-} from '@/lib/dca/types'
+} from '@/lib/dca/types/index'
 
 export type {
   LimitOrder,

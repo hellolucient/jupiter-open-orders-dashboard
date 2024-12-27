@@ -23,15 +23,19 @@ export interface BasePosition {
   totalCycles: number
   completedCycles: number
   isActive: boolean
-  executionPrice: number
+  estimatedTokens: number
+  executionPrice?: number
 }
 
 export interface Position extends BasePosition {
   minPrice?: number
   maxPrice?: number | "No limit"
   remainingAmount: number
-  estimatedTokens: number
   remainingInCycle: number
+  minExecutionPrice?: number
+  maxExecutionPrice?: number
+  minEstimatedOutput?: number
+  maxEstimatedOutput?: number
 }
 
 export type TokenSummary = TokenSummaryBase

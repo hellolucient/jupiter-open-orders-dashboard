@@ -8,7 +8,7 @@ import { useDCAData } from '@/lib/dca/hooks/useDCAData'
 import { useMemo, useState } from 'react'
 import { SortButton } from './SortButton'
 import type { LimitOrder } from '@/lib/limitOrders/types'
-import type { Position } from '@/lib/dca/types'
+import type { Position } from '@/lib/dca/types/index'
 
 interface TokenSectionProps {
   tokenSymbol: 'LOGOS' | 'CHAOS'
@@ -117,7 +117,15 @@ export function TokenSection({ tokenSymbol, currentPrice, mode = 'all', autoRefr
   };
 
   // Format large numbers consistently
-  const formatNumber = (value: number, decimals: number = 0) => {
+  const formatNumber = (value: number | undefined, decimals: number = 0, token?: string) => {
+    if (typeof value === 'undefined') return '0'
+    // Use 2 decimals for SOL amounts
+    if (token === 'SOL') {
+      return value.toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      })
+    }
     return value.toLocaleString('en-US', {
       minimumFractionDigits: decimals,
       maximumFractionDigits: decimals
@@ -125,10 +133,27 @@ export function TokenSection({ tokenSymbol, currentPrice, mode = 'all', autoRefr
   }
 
   // Format currency values
-  const formatCurrency = (value: number) => {
+  const formatCurrency = (value: number | undefined) => {
+    if (typeof value === 'undefined') return '0.00'
     return value.toLocaleString('en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
+    })
+  }
+
+  // Format price values
+  const formatPrice = (value: number | undefined) => {
+    if (typeof value === 'undefined') return '0.00'
+    // Show more decimal places for very small numbers
+    if (value < 0.000001) {
+      return value.toLocaleString('en-US', {
+        minimumFractionDigits: 12,
+        maximumFractionDigits: 12
+      })
+    }
+    return value.toLocaleString('en-US', {
+      minimumFractionDigits: 6,
+      maximumFractionDigits: 6
     })
   }
 
@@ -246,146 +271,165 @@ export function TokenSection({ tokenSymbol, currentPrice, mode = 'all', autoRefr
           <SortButton currentSort={sortOption} onSortChange={setSortOption} />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          {mode === 'limit' && (
-            <>
-              <div>
-                <h3 className="mb-2 text-green-500">Buy Orders</h3>
-                {sortedBuyOrders.length > 0 ? (
-                  sortedBuyOrders.map(order => (
-                    <LimitOrderCard
-                      key={order.id}
-                      order={order}
-                    />
-                  ))
-                ) : (
-                  <div className="text-gray-400">No buy orders found</div>
-                )}
-              </div>
-              <div>
-                <h3 className="mb-2 text-red-500">Sell Orders</h3>
-                {sortedSellOrders.length > 0 ? (
-                  sortedSellOrders.map(order => (
-                    <LimitOrderCard
-                      key={order.id}
-                      order={order}
-                    />
-                  ))
-                ) : (
-                  <div className="text-gray-400">No sell orders found</div>
-                )}
-              </div>
-            </>
-          )}
-          {mode === 'dca' && (
-            <>
-              <div>
-                <h3 className="mb-2 text-green-500">Buy Orders</h3>
-                {sortedDcaBuyOrders.length > 0 ? (
-                  sortedDcaBuyOrders.map(order => (
-                    <DCAOrderCard
-                      key={order.id}
-                      type="buy"
-                      totalAmount={`${formatNumber(order.totalAmount)} ${order.inputToken}`}
-                      splitInfo={`${order.totalCycles} orders (${order.remainingCycles} remaining)`}
-                      orderSize={`${formatNumber(order.amountPerCycle)} ${order.inputToken} per cycle`}
-                      frequency={`Every ${order.cycleFrequency}s`}
-                      status={order.isActive ? "Active" : "Inactive"}
-                      remainingAmount={`~${formatNumber(order.remainingAmount)} ${order.inputToken}`}
-                      timestamp={new Date(order.lastUpdate).toLocaleString()}
-                      estimatedOutput={`~${formatNumber(order.estimatedTokens)} ${order.outputToken}`}
-                    />
-                  ))
-                ) : (
-                  <div className="text-gray-400">No DCA buy orders found</div>
-                )}
-              </div>
-              <div>
-                <h3 className="mb-2 text-red-500">Sell Orders</h3>
-                {sortedDcaSellOrders.length > 0 ? (
-                  sortedDcaSellOrders.map(order => (
-                    <DCAOrderCard
-                      key={order.id}
-                      type="sell"
-                      totalAmount={`${formatNumber(order.totalAmount)} ${tokenSymbol}`}
-                      splitInfo={`${order.totalCycles} orders (${order.remainingCycles} remaining)`}
-                      orderSize={`${formatNumber(order.amountPerCycle)} ${tokenSymbol} per cycle`}
-                      frequency={`Every ${order.cycleFrequency}s`}
-                      status={order.isActive ? "Active" : "Inactive"}
-                      remainingAmount={`~${formatNumber(order.remainingAmount)} ${tokenSymbol}`}
-                      timestamp={new Date(order.lastUpdate).toLocaleString()}
-                      estimatedOutput={`~${formatNumber(order.estimatedTokens)} ${order.outputToken}`}
-                    />
-                  ))
-                ) : (
-                  <div className="text-gray-400">No DCA sell orders found</div>
-                )}
-              </div>
-            </>
-          )}
-          {mode === 'all' && (
-            <>
-              <div>
-                <h3 className="mb-2">DCA Orders</h3>
-                {sortedDcaBuyOrders.length > 0 || sortedDcaSellOrders.length > 0 ? (
-                  <>
+        {mode === 'all' ? (
+          // Side by side layout for 'all' mode
+          <div className="grid grid-cols-2 gap-4">
+            {/* DCA Orders Column */}
+            <div>
+              {sortedDcaBuyOrders.length > 0 && (
+                <div className="mb-4">
+                  <h3 className="text-lg font-semibold mb-2">DCA Buy Orders</h3>
+                  <div className="space-y-2">
                     {sortedDcaBuyOrders.map(order => (
-                      <DCAOrderCard
+                      <DCAOrderCard 
                         key={order.id}
                         type="buy"
-                        totalAmount={`${formatNumber(order.totalAmount)} ${order.inputToken}`}
+                        totalAmount={`${formatNumber(order.totalAmount, 0, order.inputToken)} ${order.inputToken}`}
                         splitInfo={`${order.totalCycles} orders (${order.remainingCycles} remaining)`}
-                        orderSize={`${formatNumber(order.amountPerCycle)} ${order.inputToken} per cycle`}
+                        orderSize={`${formatNumber(order.amountPerCycle, 0, order.inputToken)} ${order.inputToken} per cycle`}
                         frequency={`Every ${order.cycleFrequency}s`}
                         status={order.isActive ? "Active" : "Inactive"}
-                        remainingAmount={`~${formatNumber(order.remainingAmount)} ${order.inputToken}`}
+                        remainingAmount={`~${formatNumber(order.remainingAmount, 0, order.inputToken)} ${order.inputToken}`}
                         timestamp={new Date(order.lastUpdate).toLocaleString()}
-                        estimatedOutput={`~${formatNumber(order.estimatedTokens)} ${order.outputToken}`}
+                        minExecutionPrice={order.minExecutionPrice}
+                        maxExecutionPrice={order.maxExecutionPrice}
+                        minEstimatedOutput={order.minEstimatedOutput ? `~${formatNumber(order.minEstimatedOutput)} ${order.outputToken}` : undefined}
+                        maxEstimatedOutput={order.maxEstimatedOutput ? `~${formatNumber(order.maxEstimatedOutput)} ${order.outputToken}` : undefined}
+                        priceToken={order.priceToken}
                       />
                     ))}
+                  </div>
+                </div>
+              )}
+              {sortedDcaSellOrders.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">DCA Sell Orders</h3>
+                  <div className="space-y-2">
                     {sortedDcaSellOrders.map(order => (
-                      <DCAOrderCard
+                      <DCAOrderCard 
                         key={order.id}
                         type="sell"
-                        totalAmount={`${formatNumber(order.totalAmount)} ${tokenSymbol}`}
+                        totalAmount={`${formatNumber(order.totalAmount, 0, order.inputToken)} ${order.inputToken}`}
                         splitInfo={`${order.totalCycles} orders (${order.remainingCycles} remaining)`}
-                        orderSize={`${formatNumber(order.amountPerCycle)} ${tokenSymbol} per cycle`}
+                        orderSize={`${formatNumber(order.amountPerCycle, 0, order.inputToken)} ${order.inputToken} per cycle`}
                         frequency={`Every ${order.cycleFrequency}s`}
                         status={order.isActive ? "Active" : "Inactive"}
-                        remainingAmount={`~${formatNumber(order.remainingAmount)} ${tokenSymbol}`}
+                        remainingAmount={`~${formatNumber(order.remainingAmount, 0, order.inputToken)} ${order.inputToken}`}
                         timestamp={new Date(order.lastUpdate).toLocaleString()}
+                        minExecutionPrice={order.minExecutionPrice}
                         estimatedOutput={`~${formatNumber(order.estimatedTokens)} ${order.outputToken}`}
+                        priceToken={order.priceToken}
                       />
                     ))}
-                  </>
-                ) : (
-                  <div className="text-gray-400">No DCA orders found</div>
-                )}
-              </div>
-              <div>
-                <h3 className="mb-2">Limit Orders</h3>
-                {sortedBuyOrders.length > 0 || sortedSellOrders.length > 0 ? (
-                  <>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Limit Orders Column */}
+            <div>
+              {sortedBuyOrders.length > 0 && (
+                <div className="mb-4">
+                  <h3 className="text-lg font-semibold mb-2">Limit Buy Orders</h3>
+                  <div className="space-y-2">
                     {sortedBuyOrders.map(order => (
-                      <LimitOrderCard
-                        key={order.id}
-                        order={order}
-                      />
+                      <LimitOrderCard key={order.id} order={order} />
                     ))}
+                  </div>
+                </div>
+              )}
+              {sortedSellOrders.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">Limit Sell Orders</h3>
+                  <div className="space-y-2">
                     {sortedSellOrders.map(order => (
-                      <LimitOrderCard
-                        key={order.id}
-                        order={order}
-                      />
+                      <LimitOrderCard key={order.id} order={order} />
                     ))}
-                  </>
-                ) : (
-                  <div className="text-gray-400">No limit orders found</div>
-                )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          // Stacked layout for 'dca' and 'limit' modes
+          <>
+            {/* Buy Orders */}
+            {(mode === 'limit') && sortedBuyOrders.length > 0 && (
+              <div className="mb-4">
+                <h3 className="text-lg font-semibold mb-2">Buy Orders</h3>
+                <div className="space-y-2">
+                  {sortedBuyOrders.map(order => (
+                    <LimitOrderCard key={order.id} order={order} />
+                  ))}
+                </div>
               </div>
-            </>
-          )}
-        </div>
+            )}
+
+            {/* DCA Buy Orders */}
+            {(mode === 'dca') && sortedDcaBuyOrders.length > 0 && (
+              <div className="mb-4">
+                <h3 className="text-lg font-semibold mb-2">DCA Buy Orders</h3>
+                <div className="space-y-2">
+                  {sortedDcaBuyOrders.map(order => (
+                    <DCAOrderCard 
+                      key={order.id}
+                      type="buy"
+                      totalAmount={`${formatNumber(order.totalAmount, 0, order.inputToken)} ${order.inputToken}`}
+                      splitInfo={`${order.totalCycles} orders (${order.remainingCycles} remaining)`}
+                      orderSize={`${formatNumber(order.amountPerCycle, 0, order.inputToken)} ${order.inputToken} per cycle`}
+                      frequency={`Every ${order.cycleFrequency}s`}
+                      status={order.isActive ? "Active" : "Inactive"}
+                      remainingAmount={`~${formatNumber(order.remainingAmount, 0, order.inputToken)} ${order.inputToken}`}
+                      timestamp={new Date(order.lastUpdate).toLocaleString()}
+                      minExecutionPrice={order.minExecutionPrice}
+                      maxExecutionPrice={order.maxExecutionPrice}
+                      minEstimatedOutput={order.minEstimatedOutput ? `~${formatNumber(order.minEstimatedOutput)} ${order.outputToken}` : undefined}
+                      maxEstimatedOutput={order.maxEstimatedOutput ? `~${formatNumber(order.maxEstimatedOutput)} ${order.outputToken}` : undefined}
+                      priceToken={order.priceToken}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Sell Orders */}
+            {(mode === 'limit') && sortedSellOrders.length > 0 && (
+              <div className="mb-4">
+                <h3 className="text-lg font-semibold mb-2">Sell Orders</h3>
+                <div className="space-y-2">
+                  {sortedSellOrders.map(order => (
+                    <LimitOrderCard key={order.id} order={order} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* DCA Sell Orders */}
+            {(mode === 'dca') && sortedDcaSellOrders.length > 0 && (
+              <div>
+                <h3 className="text-lg font-semibold mb-2">DCA Sell Orders</h3>
+                <div className="space-y-2">
+                  {sortedDcaSellOrders.map(order => (
+                    <DCAOrderCard 
+                      key={order.id}
+                      type="sell"
+                      totalAmount={`${formatNumber(order.totalAmount, 0, order.inputToken)} ${order.inputToken}`}
+                      splitInfo={`${order.totalCycles} orders (${order.remainingCycles} remaining)`}
+                      orderSize={`${formatNumber(order.amountPerCycle, 0, order.inputToken)} ${order.inputToken} per cycle`}
+                      frequency={`Every ${order.cycleFrequency}s`}
+                      status={order.isActive ? "Active" : "Inactive"}
+                      remainingAmount={`~${formatNumber(order.remainingAmount, 0, order.inputToken)} ${order.inputToken}`}
+                      timestamp={new Date(order.lastUpdate).toLocaleString()}
+                      minExecutionPrice={order.minExecutionPrice}
+                      estimatedOutput={`~${formatNumber(order.estimatedTokens)} ${order.outputToken}`}
+                      priceToken={order.priceToken}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </section>
     </div>
   );

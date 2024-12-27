@@ -2,22 +2,7 @@ import { Connection, PublicKey } from '@solana/web3.js'
 import { DCA, Network } from '@jup-ag/dca-sdk'
 import { TOKENS } from '../limitOrders/tokenConfig'
 import BN from 'bn.js'
-
-export interface DCAPosition {
-  id: string
-  owner: string
-  token: string
-  type: 'BUY' | 'SELL'
-  totalAmount: number
-  amountPerCycle: number
-  totalCycles: number
-  remainingCycles: number
-  cycleFrequency: number
-  remainingAmount: number
-  remainingInCycle: number
-  isActive: boolean
-  lastUpdate: number
-}
+import type { Position } from './types/index'
 
 interface DCAAccountData {
   user: PublicKey
@@ -47,7 +32,7 @@ function bnToNumber(bn: BN, decimals: number): number {
   return parseFloat(`${integerPart}.${decimalPart}`)
 }
 
-export async function getDcaPositions(connection: Connection): Promise<DCAPosition[]> {
+export async function getDcaPositions(connection: Connection): Promise<Position[]> {
   // Initialize Jupiter DCA SDK
   const dca = new DCA(connection, Network.MAINNET)
 
@@ -74,8 +59,8 @@ export async function getDcaPositions(connection: Connection): Promise<DCAPositi
 
   console.log(`Found ${relevantAccounts.length} CHAOS/LOGOS related DCA accounts`)
 
-  // Process each account into our DCAPosition format
-  const positions: DCAPosition[] = relevantAccounts.map((account: ProgramAccount<DCAAccountData>) => {
+  // Process each account into our Position format
+  const positions: Position[] = relevantAccounts.map((account: ProgramAccount<DCAAccountData>) => {
     const isBuy = account.account.inputMint.equals(USDC_MINT)
     const token = isBuy 
       ? (account.account.outputMint.equals(CHAOS_MINT) ? 'CHAOS' : 'LOGOS')
@@ -106,18 +91,27 @@ export async function getDcaPositions(connection: Connection): Promise<DCAPositi
 
     return {
       id: account.publicKey.toString(),
-      owner: account.account.user.toString(),
       token,
       type: isBuy ? 'BUY' : 'SELL',
+      inputToken: isBuy ? 'USDC' : token,
+      outputToken: isBuy ? token : 'USDC',
+      inputAmount: amountPerCycle,
       totalAmount,
       amountPerCycle,
-      totalCycles,
       remainingCycles,
       cycleFrequency: account.account.cycleFrequency.toNumber(),
+      lastUpdate: account.account.nextCycleAt.toNumber() * 1000,
+      publicKey: account.publicKey.toString(),
+      targetPrice: 0,
+      currentPrice: 0,
+      priceToken: isBuy ? `USDC/${token}` : `${token}/USDC`,
+      estimatedOutput: 0,
+      totalCycles,
+      completedCycles,
+      isActive: true,
       remainingAmount,
       remainingInCycle: amountPerCycle,
-      isActive: true, // We'll assume active if we can fetch it
-      lastUpdate: account.account.nextCycleAt.toNumber() * 1000 // Convert to milliseconds
+      estimatedTokens: 0
     }
   })
 

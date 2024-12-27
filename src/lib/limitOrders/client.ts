@@ -51,7 +51,7 @@ export class JupiterLimitOrdersAPI {
     
     return {
       address: mint,
-      symbol: knownToken?.name || 'UNKNOWN',
+      symbol: knownToken?.symbol || 'UNKNOWN',
       decimals,
       isDecimalKnown: !!knownToken
     };

@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
 import { jupiterDCA } from '../client'
-import type { Position, TokenSummary, ChartDataPoint } from '../types'
+import type { Position, TokenSummary, ChartDataPoint } from '../types/index'
 import { useAutoRefresh } from '@/lib/shared/hooks/useAutoRefresh'
 
 export function useDCAData(autoRefresh = false) {

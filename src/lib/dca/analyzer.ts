@@ -1,8 +1,8 @@
 import { Connection, PublicKey } from '@solana/web3.js'
 import { DCA, Network } from '@jup-ag/dca-sdk'
 import fs from 'fs'
-import { TOKENS } from './tokenConfig'
-import type { DCAAccountType } from './types'
+import { TOKENS } from '../shared/tokenConfig'
+import type { DCAAccountType } from './types/index'
 
 const LOGOS_MINT = new PublicKey(TOKENS.LOGOS.address)
 const CHAOS_MINT = new PublicKey(TOKENS.CHAOS.address)
