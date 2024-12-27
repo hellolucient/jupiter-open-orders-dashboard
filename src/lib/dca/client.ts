@@ -151,7 +151,6 @@ export class JupiterDCAAPI {
     const rawInAmount = account.account.inAmountPerCycle.toNumber()
     const rawTotalAmount = account.account.inDeposited.toNumber()
     const rawInUsed = account.account.inUsed.toNumber()
-    const nextCycleAt = account.account.nextCycleAt.toNumber()
     const minOutAmount = account.account.minOutAmount?.toNumber() || 0
     const maxOutAmount = account.account.maxOutAmount?.toNumber() || 0
 

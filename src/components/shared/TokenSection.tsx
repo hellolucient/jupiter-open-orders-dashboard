@@ -187,7 +187,7 @@ export function TokenSection({ tokenSymbol, currentPrice, mode = 'all', autoRefr
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">{tokenSymbol}</h2>
           <div className="text-gray-400">
-            Current Price: ${currentPrice.toFixed(6)}
+            Current Price: ${formatPrice(currentPrice)}
           </div>
         </div>
         

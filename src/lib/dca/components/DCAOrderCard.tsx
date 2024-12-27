@@ -10,7 +10,6 @@ interface DCAOrderCardProps {
   remainingAmount: string
   timestamp: string
   estimatedOutput?: string
-  executionPrice?: number
   minExecutionPrice?: number
   maxExecutionPrice?: number
   minEstimatedOutput?: string
@@ -28,7 +27,6 @@ export function DCAOrderCard({
   remainingAmount,
   timestamp,
   estimatedOutput,
-  executionPrice,
   minExecutionPrice,
   maxExecutionPrice,
   minEstimatedOutput,
