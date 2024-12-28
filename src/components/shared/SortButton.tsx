@@ -1,6 +1,6 @@
 'use client'
 
-type SortOption = 'amount-desc' | 'amount-asc' | 'date-desc' | 'date-asc'
+import { SortOption } from '@/lib/shared/types'
 
 interface SortButtonProps {
   currentSort: SortOption
@@ -8,7 +8,7 @@ interface SortButtonProps {
 }
 
 export function SortButton({ currentSort, onSortChange }: SortButtonProps) {
-  const handleClick = (value: 'amount' | 'date') => {
+  const handleClick = (value: 'amount' | 'date' | 'price') => {
     // Toggle between desc and asc
     if (currentSort === `${value}-desc`) {
       onSortChange(`${value}-asc` as SortOption)
@@ -17,10 +17,14 @@ export function SortButton({ currentSort, onSortChange }: SortButtonProps) {
     }
   }
 
-  const getButtonLabel = (value: 'amount' | 'date') => {
-    const label = value === 'amount' ? 'Amount' : 'Date'
+  const getButtonLabel = (value: 'amount' | 'date' | 'price') => {
+    const labels = {
+      amount: 'Amount',
+      date: 'Date',
+      price: 'Price'
+    }
     const isDesc = currentSort === `${value}-desc`
-    return `${label} ${isDesc ? '↓' : '↑'}`
+    return `${labels[value]} ${isDesc ? '↓' : '↑'}`
   }
 
   return (
@@ -36,6 +40,16 @@ export function SortButton({ currentSort, onSortChange }: SortButtonProps) {
           }`}
         >
           {getButtonLabel('amount')}
+        </button>
+        <button
+          onClick={() => handleClick('price')}
+          className={`px-3 py-1 text-sm ${
+            currentSort.startsWith('price')
+              ? 'bg-gray-700 text-white'
+              : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+          }`}
+        >
+          {getButtonLabel('price')}
         </button>
         <button
           onClick={() => handleClick('date')}

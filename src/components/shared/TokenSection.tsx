@@ -9,6 +9,7 @@ import { useMemo, useState } from 'react'
 import { SortButton } from './SortButton'
 import type { LimitOrder } from '@/lib/limitOrders/types'
 import type { Position } from '@/lib/dca/types/index'
+import { SortOption } from '@/lib/shared/types'
 
 interface TokenSectionProps {
   tokenSymbol: 'LOGOS' | 'CHAOS'
@@ -16,8 +17,6 @@ interface TokenSectionProps {
   mode?: 'all' | 'dca' | 'limit'
   autoRefresh?: boolean
 }
-
-type SortOption = 'amount-desc' | 'amount-asc' | 'date-desc' | 'date-asc'
 
 export function TokenSection({ tokenSymbol, currentPrice, mode = 'all', autoRefresh = false }: TokenSectionProps) {
   const [sortOption, setSortOption] = useState<SortOption>('amount-desc')
@@ -30,7 +29,7 @@ export function TokenSection({ tokenSymbol, currentPrice, mode = 'all', autoRefr
     (order.inputMint.symbol === tokenSymbol || order.outputMint.symbol === tokenSymbol)
   ), [orders, tokenSymbol]);
 
-  // Sort orders by amount and date
+  // Sort orders by amount, date, and price
   const sortLimitOrders = (orders: LimitOrder[], option: SortOption): LimitOrder[] => {
     return [...orders].sort((a, b) => {
       if (option.startsWith('date')) {
@@ -38,6 +37,13 @@ export function TokenSection({ tokenSymbol, currentPrice, mode = 'all', autoRefr
         const dateA = new Date(a.createdAt.split('.')[0]).getTime()
         const dateB = new Date(b.createdAt.split('.')[0]).getTime()
         return option === 'date-asc' ? dateA - dateB : dateB - dateA
+      }
+      
+      if (option.startsWith('price')) {
+        // For limit orders, use the USDC price directly
+        const priceA = a.price
+        const priceB = b.price
+        return option === 'price-asc' ? priceA - priceB : priceB - priceA
       }
       
       // Amount sort
@@ -51,6 +57,13 @@ export function TokenSection({ tokenSymbol, currentPrice, mode = 'all', autoRefr
     return [...orders].sort((a, b) => {
       if (option.startsWith('date')) {
         return option === 'date-asc' ? a.lastUpdate - b.lastUpdate : b.lastUpdate - a.lastUpdate
+      }
+      
+      if (option.startsWith('price')) {
+        // For DCA orders, use minExecutionPrice if available
+        const priceA = a.minExecutionPrice || 0
+        const priceB = b.minExecutionPrice || 0
+        return option === 'price-asc' ? priceA - priceB : priceB - priceA
       }
       
       // Amount sort
