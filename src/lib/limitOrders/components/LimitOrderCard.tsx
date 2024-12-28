@@ -1,6 +1,8 @@
 'use client'
 
 import type { LimitOrder } from '@/lib/limitOrders/types'
+import { useEffect, useState } from 'react'
+import { PriceService } from '@/lib/shared/services/PriceService'
 
 interface LimitOrderCardProps {
   order: LimitOrder
@@ -10,6 +12,8 @@ export function LimitOrderCard({ order }: LimitOrderCardProps) {
   const isBuy = order.orderType === 'BUY'
   const colorClass = isBuy ? 'text-green-500' : 'text-red-500'
   const dotColorClass = isBuy ? 'bg-green-500' : 'bg-red-500'
+  const [usdcPrice, setUsdcPrice] = useState<number | null>(null)
+  const [totalUSDC, setTotalUSDC] = useState<number | null>(null)
 
   // For buy orders:
   // - Amount is what we're getting (takingAmount)
@@ -17,6 +21,42 @@ export function LimitOrderCard({ order }: LimitOrderCardProps) {
   // - Total is what we're paying (makingAmount)
   const amount = isBuy ? order.takingAmount : order.makingAmount
   const total = isBuy ? order.makingAmount : order.takingAmount
+
+  useEffect(() => {
+    const fetchUsdcPrices = async () => {
+      const priceService = PriceService.getInstance()
+      const inputSymbol = order.inputMint.symbol
+      const outputSymbol = order.outputMint.symbol
+
+      // Skip if already in USDC
+      if (inputSymbol === 'USDC' || outputSymbol === 'USDC') {
+        setUsdcPrice(order.price)
+        setTotalUSDC(total)
+        return
+      }
+
+      try {
+        // Convert execution price to USDC
+        const priceInUsdc = await priceService.convertExecutionPrice(
+          order.price,
+          inputSymbol,
+          outputSymbol
+        )
+        setUsdcPrice(priceInUsdc || null)
+
+        // Convert total to USDC
+        const totalInUsdc = await priceService.convertToUsdc(
+          total,
+          isBuy ? inputSymbol : outputSymbol
+        )
+        setTotalUSDC(totalInUsdc)
+      } catch (error) {
+        console.error('Error converting prices to USDC:', error)
+      }
+    }
+
+    fetchUsdcPrices()
+  }, [order, isBuy, total])
 
   // Format amounts based on token type
   const formatAmount = (value: number, symbol: string) => {
@@ -72,11 +112,25 @@ export function LimitOrderCard({ order }: LimitOrderCardProps) {
         </div>
         <div className="flex justify-between">
           <span>Execution Price:</span>
-          <span>{formatPrice(order.price)} {priceSymbol}</span>
+          <div className="text-right">
+            {usdcPrice !== null && (
+              <div>≈ ${formatPrice(usdcPrice)} USDC/{amountSymbol}</div>
+            )}
+            <div className="text-gray-400 text-xs">
+              {formatPrice(order.price)} {priceSymbol}
+            </div>
+          </div>
         </div>
         <div className="flex justify-between">
           <span>Total:</span>
-          <span>{formatAmount(total, totalSymbol)} {totalSymbol}</span>
+          <div className="text-right">
+            {totalUSDC !== null && (
+              <div>≈ ${formatAmount(totalUSDC, 'USDC')} USDC</div>
+            )}
+            <div className="text-gray-400 text-xs">
+              {formatAmount(total, totalSymbol)} {totalSymbol}
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -6,12 +6,7 @@ const nextConfig = {
       "net": false,
       "tls": false,
       "fs": false,
-      "ws": false,
-      "crypto": false,
-      "stream": false,
-      "http": false,
-      "https": false,
-      "zlib": false
+      "ws": false
     }
 
     // Support for WebAssembly
@@ -21,11 +16,21 @@ const nextConfig = {
       layers: true,
     }
 
-    // Handle buffer polyfills
+    // Handle polyfills
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
         "buffer": require.resolve("buffer/"),
+        crypto: require.resolve('crypto-browserify'),
+        stream: require.resolve('stream-browserify'),
+        url: require.resolve('url'),
+        zlib: require.resolve('browserify-zlib'),
+        http: require.resolve('stream-http'),
+        https: require.resolve('https-browserify'),
+        assert: require.resolve('assert'),
+        os: require.resolve('os-browserify'),
+        path: require.resolve('path-browserify'),
+        'node-fetch': require.resolve('node-fetch')
       }
     }
 

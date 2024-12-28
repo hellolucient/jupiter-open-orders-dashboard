@@ -13,6 +13,8 @@ export interface LimitOrder {
   oriTakingAmount: number
   borrowMakingAmount: number
   price: number
+  priceUSDC?: number
+  totalUSDC?: number
   status: 'open' | 'filled' | 'cancelled'
   createdAt: string
   updatedAt: string
