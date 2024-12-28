@@ -1,26 +1,31 @@
 'use client'
 
+import { useEffect, useState } from 'react'
+import { PriceService } from '@/lib/shared/services/PriceService'
+import { formatNumber, formatPrice } from '@/lib/shared/utils/format'
+import clsx from 'clsx'
+
 interface DCAOrderCardProps {
-  type: string
-  totalAmount: string
-  splitInfo: string
-  orderSize: string
+  type: 'BUY' | 'SELL'
+  totalAmount: number
+  orderSize: number
   frequency: string
   status: string
-  remainingAmount: string
+  remainingAmount: number
   timestamp: string
-  estimatedOutput?: string
+  estimatedOutput: number
   minExecutionPrice?: number
   maxExecutionPrice?: number
-  minEstimatedOutput?: string
-  maxEstimatedOutput?: string
   priceToken?: string
+  inputToken?: string
+  outputToken?: string
+  totalCycles?: number
+  remainingCycles?: number
 }
 
 export function DCAOrderCard({
   type,
   totalAmount,
-  splitInfo,
   orderSize,
   frequency,
   status,
@@ -29,147 +34,171 @@ export function DCAOrderCard({
   estimatedOutput,
   minExecutionPrice,
   maxExecutionPrice,
-  minEstimatedOutput,
-  maxEstimatedOutput,
-  priceToken
+  priceToken,
+  inputToken,
+  outputToken,
+  totalCycles,
+  remainingCycles
 }: DCAOrderCardProps) {
-  const isBuy = type === 'buy'
-  const colorClass = isBuy ? 'text-green-500' : 'text-red-500'
-  const dotColorClass = isBuy ? 'bg-green-500' : 'bg-red-500'
-  const orderType = isBuy ? 'BUY' : 'SELL'
+  const [minUsdcPrice, setMinUsdcPrice] = useState<number | null>(null)
+  const [maxUsdcPrice, setMaxUsdcPrice] = useState<number | null>(null)
+
+  useEffect(() => {
+    const fetchUsdcPrices = async () => {
+      try {
+        const priceService = PriceService.getInstance()
+
+        if (minExecutionPrice && !priceToken?.includes('USDC')) {
+          const minPriceInUsdc = await priceService.convertExecutionPrice(
+            minExecutionPrice,
+            inputToken || '',
+            outputToken || ''
+          )
+          setMinUsdcPrice(minPriceInUsdc || null)
+        }
+
+        if (maxExecutionPrice && !priceToken?.includes('USDC')) {
+          const maxPriceInUsdc = await priceService.convertExecutionPrice(
+            maxExecutionPrice,
+            inputToken || '',
+            outputToken || ''
+          )
+          setMaxUsdcPrice(maxPriceInUsdc || null)
+        }
+      } catch (error) {
+        console.error('Error converting prices to USDC:', error)
+      }
+    }
+
+    if (inputToken && outputToken) {
+      fetchUsdcPrices()
+    }
+  }, [minExecutionPrice, maxExecutionPrice, inputToken, outputToken, priceToken])
 
   // Format date to be more readable
   const formatDate = (dateStr: string) => {
-    try {
-      // Parse local time format DD/MM/YYYY, HH:mm:ss
-      const [datePart, timePart] = dateStr.split(', ');
-      const [day, month, year] = datePart.split('/');
-      const [hours, minutes, seconds] = timePart.split(':');
-
-      // First create date in local time
-      const localDate = new Date(
-        parseInt(year),
-        parseInt(month) - 1,  // months are 0-based
-        parseInt(day),
-        parseInt(hours),
-        parseInt(minutes),
-        parseInt(seconds)
-      );
-
-      // Get the UTC time values
-      const utcYear = localDate.getUTCFullYear();
-      const utcMonth = localDate.getUTCMonth();
-      const utcDay = localDate.getUTCDate();
-      const utcHours = localDate.getUTCHours();
-      const utcMinutes = localDate.getUTCMinutes();
-      const utcSeconds = localDate.getUTCSeconds();
-
-      // Create a new date with UTC values
-      const utcDate = new Date(Date.UTC(utcYear, utcMonth, utcDay, utcHours, utcMinutes, utcSeconds));
-
-      // Format in UTC
-      return new Intl.DateTimeFormat('en-US', {
-        timeZone: 'UTC',
-        month: 'short',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: 'numeric',
-        hour12: true,
-        timeZoneName: 'short'
-      }).format(utcDate);
-    } catch (error) {
-      console.error('Error formatting date:', error, dateStr);
-      return dateStr; // Return original string if parsing fails
-    }
-  }
-
-  // Format price with consistent decimals
-  const formatPrice = (value: number | undefined) => {
-    if (typeof value === 'undefined') return 'Market Price'
-    // For very small numbers (less than 0.000001), show more decimal places
-    if (value > 0 && value < 0.000001) {
-      return value.toLocaleString('en-US', { minimumFractionDigits: 12, maximumFractionDigits: 12 })
-    }
-    return value.toLocaleString('en-US', { minimumFractionDigits: 6, maximumFractionDigits: 6 })
+    const date = new Date(dateStr)
+    return date.toLocaleString('en-US', {
+      timeZone: 'UTC',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric',
+      hour12: true,
+      timeZoneName: 'short'
+    })
   }
 
   return (
-    <div className={`p-4 bg-gray-800 rounded-lg mb-3 border ${
-      isBuy ? 'border-green-500/20' : 'border-red-500/20'
-    }`}>
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center">
-          <div className={`w-2 h-2 rounded-full ${dotColorClass}`} />
-          <span className={`ml-2 font-medium ${colorClass}`}>{orderType}</span>
+    <div className={clsx(
+      'bg-gray-900 rounded-lg p-4 border',
+      type === 'BUY' ? 'border-green-500/20' : 'border-red-500/20'
+    )}>
+      <div className="space-y-1.5">
+        <div className="flex justify-between items-center">
+          <span className="text-gray-400">Type:</span>
+          <span className={type === 'BUY' ? 'text-green-500' : 'text-red-500'}>
+            {type}
+          </span>
         </div>
-        <div className="text-gray-400 text-sm">
-          {formatDate(timestamp)}
-        </div>
-      </div>
 
-      <div className="grid gap-2">
-        <div className="grid grid-cols-2">
-          <div className="text-gray-400">Total Amount</div>
-          <div className="text-right">{totalAmount}</div>
+        <div className="flex justify-between items-center">
+          <span className="text-gray-400">Total Amount:</span>
+          <span className="text-white">
+            {formatNumber(totalAmount, 0, inputToken)} {inputToken}
+          </span>
         </div>
-        <div className="grid grid-cols-2">
-          <div className="text-gray-400">Split Info</div>
-          <div className="text-right">{splitInfo}</div>
+
+        <div className="flex justify-between items-center">
+          <span className="text-gray-400">Split Info:</span>
+          <span className="text-white">
+            {totalCycles} orders ({remainingCycles} remaining)
+          </span>
         </div>
-        <div className="grid grid-cols-2">
-          <div className="text-gray-400">Order Size</div>
-          <div className="text-right">{orderSize}</div>
+
+        <div className="flex justify-between items-center">
+          <span className="text-gray-400">Order Size:</span>
+          <span className="text-white">
+            {formatNumber(orderSize, 0, inputToken)} {inputToken} per cycle
+          </span>
         </div>
-        <div className="grid grid-cols-2">
-          <div className="text-gray-400">Frequency</div>
-          <div className="text-right">{frequency}</div>
+
+        <div className="flex justify-between items-center">
+          <span className="text-gray-400">Frequency:</span>
+          <span className="text-white">{frequency}</span>
         </div>
-        <div className="grid grid-cols-2">
-          <div className="text-gray-400">Status</div>
-          <div className={`text-right ${status === 'Active' ? 'text-green-500' : 'text-gray-400'}`}>
+
+        <div className="flex justify-between items-center">
+          <span className="text-gray-400">Status:</span>
+          <span className={status === 'Active' ? 'text-green-500' : 'text-white'}>
             {status}
+          </span>
+        </div>
+
+        <div className="flex justify-between items-center">
+          <span className="text-gray-400">Remaining Amount:</span>
+          <span className="text-white">
+            {remainingAmount < 0 ? '~' : ''}{formatNumber(Math.abs(remainingAmount), 0, inputToken)} {inputToken}
+          </span>
+        </div>
+
+        {minExecutionPrice && (
+          <div>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-400">Min. Execution Price:</span>
+              {minUsdcPrice && !priceToken?.includes('USDC') ? (
+                <span className="text-white">
+                  ≈ ${formatPrice(minUsdcPrice)} USDC/{outputToken}
+                </span>
+              ) : (
+                <span className="text-white">
+                  {formatPrice(minExecutionPrice)} {priceToken}
+                </span>
+              )}
+            </div>
+            {minUsdcPrice && !priceToken?.includes('USDC') && (
+              <div className="text-right text-sm text-gray-400">
+                {formatPrice(minExecutionPrice)} {priceToken}
+              </div>
+            )}
           </div>
-        </div>
-        <div className="grid grid-cols-2">
-          <div className="text-gray-400">Remaining Amount</div>
-          <div className="text-right">{remainingAmount}</div>
-        </div>
-        {isBuy && (
-          <>
-            <div className="grid grid-cols-2">
-              <div className="text-gray-400">Min. Execution Price</div>
-              <div className="text-right">{minExecutionPrice ? `${formatPrice(minExecutionPrice)} ${priceToken}` : 'N/A'}</div>
-            </div>
-            <div className="grid grid-cols-2">
-              <div className="text-gray-400">Max. Estimated Output</div>
-              <div className="text-right">{maxEstimatedOutput || 'N/A'}</div>
-            </div>
-            <div className="grid grid-cols-2">
-              <div className="text-gray-400">Max. Execution Price</div>
-              <div className="text-right">{maxExecutionPrice ? `${formatPrice(maxExecutionPrice)} ${priceToken}` : 'N/A'}</div>
-            </div>
-            <div className="grid grid-cols-2">
-              <div className="text-gray-400">Min. Estimated Output</div>
-              <div className="text-right">{minEstimatedOutput || 'N/A'}</div>
-            </div>
-          </>
         )}
-        {!isBuy && (
-          <>
-            {minExecutionPrice && (
-              <div className="grid grid-cols-2">
-                <div className="text-gray-400">Execution Price</div>
-                <div className="text-right">{formatPrice(minExecutionPrice)} {priceToken}</div>
+
+        {maxExecutionPrice && maxExecutionPrice !== minExecutionPrice && (
+          <div>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-400">Max. Execution Price:</span>
+              {maxUsdcPrice && !priceToken?.includes('USDC') ? (
+                <span className="text-white">
+                  ≈ ${formatPrice(maxUsdcPrice)} USDC/{outputToken}
+                </span>
+              ) : (
+                <span className="text-white">
+                  {formatPrice(maxExecutionPrice)} {priceToken}
+                </span>
+              )}
+            </div>
+            {maxUsdcPrice && !priceToken?.includes('USDC') && (
+              <div className="text-right text-sm text-gray-400">
+                {formatPrice(maxExecutionPrice)} {priceToken}
               </div>
             )}
-            {estimatedOutput && (
-              <div className="grid grid-cols-2">
-                <div className="text-gray-400">Estimated Output</div>
-                <div className="text-right">{estimatedOutput}</div>
-              </div>
-            )}
-          </>
+          </div>
         )}
+
+        {estimatedOutput !== 0 && (
+          <div className="flex justify-between items-center">
+            <span className="text-gray-400">Estimated Output:</span>
+            <span className="text-white">
+              ≈ {formatNumber(Math.abs(estimatedOutput), 0, outputToken)} {outputToken}
+            </span>
+          </div>
+        )}
+
+        <div className="flex justify-between items-center">
+          <span className="text-gray-400">Last Update:</span>
+          <span className="text-white">{formatDate(timestamp)}</span>
+        </div>
       </div>
     </div>
   )

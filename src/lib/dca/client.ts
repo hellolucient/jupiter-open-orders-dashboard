@@ -10,9 +10,14 @@ export class JupiterDCAAPI {
   private dca: DCA | null = null
   private connection: Connection
   private jupiterApiUrl = 'https://api.jup.ag/price/v2'
+  private readonly MAX_RETRIES = 3
+  private readonly RETRY_DELAY = 1000 // 1 second
 
   constructor() {
-    this.connection = new Connection(process.env.NEXT_PUBLIC_RPC_URL!)
+    this.connection = new Connection(process.env.NEXT_PUBLIC_RPC_URL!, {
+      commitment: 'confirmed',
+      wsEndpoint: undefined // Disable WebSocket to prevent connection issues
+    })
     this.initDCA()
   }
 
@@ -24,13 +29,16 @@ export class JupiterDCAAPI {
     } catch (error) {
       console.error('Failed to initialize DCA:', error)
       // Try to reconnect
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      this.connection = new Connection(process.env.NEXT_PUBLIC_RPC_URL!)
+      await new Promise(resolve => setTimeout(resolve, this.RETRY_DELAY))
+      this.connection = new Connection(process.env.NEXT_PUBLIC_RPC_URL!, {
+        commitment: 'confirmed',
+        wsEndpoint: undefined
+      })
       this.initDCA()
     }
   }
 
-  private async withRetry<T>(operation: () => Promise<T>, maxRetries = 3): Promise<T> {
+  private async withRetry<T>(operation: () => Promise<T>, maxRetries = this.MAX_RETRIES): Promise<T> {
     let lastError: unknown = new Error('Operation failed')
     for (let i = 0; i < maxRetries; i++) {
       try {
@@ -38,11 +46,19 @@ export class JupiterDCAAPI {
       } catch (error) {
         console.log(`Attempt ${i + 1} failed:`, error)
         lastError = error
-        await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)))
-        // Try to reinitialize DCA if it failed
-        if (i === maxRetries - 1) {
+        
+        // Check if it's a connection error
+        if (error instanceof Error && error.message.includes('Failed to fetch')) {
+          console.log('Connection error detected, reinitializing connection...')
+          this.connection = new Connection(process.env.NEXT_PUBLIC_RPC_URL!, {
+            commitment: 'confirmed',
+            wsEndpoint: undefined
+          })
           await this.initDCA()
         }
+        
+        // Wait longer between each retry
+        await new Promise(resolve => setTimeout(resolve, this.RETRY_DELAY * (i + 1)))
       }
     }
     throw lastError
@@ -107,140 +123,44 @@ export class JupiterDCAAPI {
   }
 
   private async convertDCAAccount(account: DCAAccountType, price: number, token: string, type: "BUY" | "SELL"): Promise<Position> {
-    // Debug logging for raw mint values
-    console.log('Raw DCA Account Mints:', {
-      inputMint: {
-        raw: account.account.inputMint,
-        toString: account.account.inputMint.toString(),
-        isPublicKey: account.account.inputMint instanceof PublicKey
-      },
-      outputMint: {
-        raw: account.account.outputMint,
-        toString: account.account.outputMint.toString(),
-        isPublicKey: account.account.outputMint instanceof PublicKey
-      }
-    });
-
     // Get input and output token info
     const inputToken = getTokenByMint(account.account.inputMint.toString())
     const outputToken = getTokenByMint(account.account.outputMint.toString())
-
-    // Debug logging for token lookup results
-    console.log('Token Lookup Results:', {
-      inputMintStr: account.account.inputMint.toString(),
-      outputMintStr: account.account.outputMint.toString(),
-      inputToken,
-      outputToken
-    });
-
-    if (!inputToken || !outputToken) {
-      console.error('Unknown token:', {
-        inputMint: account.account.inputMint.toString(),
-        outputMint: account.account.outputMint.toString()
-      })
-    }
-
-    // Get price in terms of input token
-    const priceInInputToken = await this.getPriceInToken(outputToken?.address || "", inputToken?.address || "")
-
-    // Use actual token decimals
-    const inputDecimals = inputToken?.decimals ?? 6
-    const outputDecimals = outputToken?.decimals ?? 6
-
-    // Debug logging for decimal conversion
-    const rawInAmount = account.account.inAmountPerCycle.toNumber()
-    const rawTotalAmount = account.account.inDeposited.toNumber()
-    const rawInUsed = account.account.inUsed.toNumber()
-    const minOutAmount = account.account.minOutAmount?.toNumber() || 0
-    const maxOutAmount = account.account.maxOutAmount?.toNumber() || 0
-
-    // Calculate actual remaining amount (total - used)
-    const rawRemainingAmount = rawTotalAmount - rawInUsed
-
-    // Detect if this is a flash fill order (executed immediately) or a regular DCA order
-    const isFlashFill = rawInUsed === rawTotalAmount && rawTotalAmount > 0
-    const isDcaOrder = !isFlashFill && rawTotalAmount > 0
-
-    // Special debug for CHAOS orders
-    if (token === 'CHAOS') {
-      const convertedAmount = toDecimalAmount(rawTotalAmount, type === 'BUY' ? inputDecimals : outputDecimals)
-      console.log(`CHAOS ${type} Order [${convertedAmount.toFixed(6)} ${inputToken?.symbol}] [${account.publicKey.toString()}]:`, {
-        orderType: isFlashFill ? 'Flash Fill' : 'DCA',
-        rawBuffer: {
-          inAmountPerCycle: account.account.inAmountPerCycle.toString(),
-          inDeposited: account.account.inDeposited.toString(),
-          inWithdrawn: account.account.inWithdrawn.toString(),
-          inUsed: account.account.inUsed.toString(),
-          nextCycleAt: account.account.nextCycleAt.toString(),
-          minOutAmount: account.account.minOutAmount?.toString() || '0',
-          maxOutAmount: account.account.maxOutAmount?.toString() || '0'
-        },
-        rawValues: {
-          inAmountPerCycle: rawInAmount.toString(),
-          inDeposited: rawTotalAmount.toString(),
-          inWithdrawn: account.account.inWithdrawn.toNumber().toString(),
-          inUsed: rawInUsed.toString(),
-          remainingAmount: rawRemainingAmount.toString(),
-          minOutAmount: minOutAmount.toString(),
-          maxOutAmount: maxOutAmount.toString()
-        },
-        convertedValues: {
-          inAmountPerCycle: toDecimalAmount(rawInAmount, inputDecimals),
-          inDeposited: toDecimalAmount(rawTotalAmount, inputDecimals),
-          inWithdrawn: toDecimalAmount(account.account.inWithdrawn.toNumber(), inputDecimals),
-          inUsed: toDecimalAmount(rawInUsed, inputDecimals),
-          remainingAmount: toDecimalAmount(rawRemainingAmount, inputDecimals),
-          minOutAmount: toDecimalAmount(minOutAmount, outputDecimals),
-          maxOutAmount: toDecimalAmount(maxOutAmount, outputDecimals)
-        },
-        cycleCalculations: {
-          rawTotalAmount,
-          rawInAmount,
-          rawInUsed,
-          calculatedTotalCycles: Math.floor(rawTotalAmount / rawInAmount),
-          calculatedCompletedCycles: Math.floor(rawInUsed / rawInAmount),
-          calculatedRemainingCycles: Math.floor(rawTotalAmount / rawInAmount) - Math.floor(rawInUsed / rawInAmount)
-        },
-        status: {
-          isFlashFill,
-          isDcaOrder,
-          isCompleted: rawInUsed === rawTotalAmount,
-          cycleFrequency: isDcaOrder ? account.account.cycleFrequency.toNumber() : 0,
-          hasWithdrawnFunds: account.account.inWithdrawn.toNumber() > 0
-        },
-        decimalsUsed: {
-          input: inputDecimals,
-          output: outputDecimals,
-          inputToken: inputToken?.symbol,
-          outputToken: outputToken?.symbol
-        }
-      })
-    }
-
-    // Only calculate cycles for actual DCA orders
-    const totalCycles = isDcaOrder ? Math.floor(rawTotalAmount / rawInAmount) : 1
-    const completedCycles = isDcaOrder ? Math.floor(rawInUsed / rawInAmount) : (isFlashFill ? 1 : 0)
-    const remainingCycles = isDcaOrder ? totalCycles - completedCycles : 0
 
     // Use actual input token symbol instead of assuming USDC
     const inputTokenSymbol = inputToken?.symbol ?? (type === "BUY" ? "USDC" : token)
     const outputTokenSymbol = outputToken?.symbol ?? (type === "BUY" ? token : "USDC")
     const priceToken = `${type === "BUY" ? inputTokenSymbol : outputTokenSymbol}/${type === "BUY" ? outputTokenSymbol : inputTokenSymbol}`
 
-    // Calculate execution price from minOutAmount for buy orders
-    let executionPrice: number | undefined
-    let estimatedTokens = 0
+    // Use actual token decimals
+    const inputDecimals = inputToken?.decimals ?? 6
+    const outputDecimals = outputToken?.decimals ?? 6
+
+    // Convert amounts to decimal
+    const rawInAmount = account.account.inAmountPerCycle.toNumber()
+    const rawTotalAmount = account.account.inDeposited.toNumber()
+    const rawInUsed = account.account.inUsed.toNumber()
+    const minOutAmount = account.account.minOutAmount?.toNumber() || 0
+    const maxOutAmount = account.account.maxOutAmount?.toNumber() || 0
+    const rawRemainingAmount = rawTotalAmount - rawInUsed
+
+    // Detect if this is a flash fill order or a regular DCA order
+    const isFlashFill = rawInUsed === rawTotalAmount && rawTotalAmount > 0
+    const isDcaOrder = !isFlashFill && rawTotalAmount > 0
+
+    // Calculate cycles
+    const totalCycles = isDcaOrder ? Math.floor(rawTotalAmount / rawInAmount) : 1
+    const completedCycles = isDcaOrder ? Math.floor(rawInUsed / rawInAmount) : (isFlashFill ? 1 : 0)
+    const remainingCycles = isDcaOrder ? totalCycles - completedCycles : 0
+
+    // Convert amounts to decimal for price calculation
+    const inAmountDecimal = toDecimalAmount(rawInAmount, inputDecimals)
+    let minExecutionPrice: number | undefined
+    let maxExecutionPrice: number | undefined
+    let minEstimatedTokens = 0
+    let maxEstimatedTokens = 0
 
     if (type === "BUY") {
-      // For buy orders, calculate min and max execution prices if limits are set
-      let minExecutionPrice: number | undefined
-      let maxExecutionPrice: number | undefined
-      let minEstimatedTokens = 0
-      let maxEstimatedTokens = 0
-
-      // Convert amounts to decimal for price calculation
-      const inAmountDecimal = toDecimalAmount(rawInAmount, inputDecimals)
-      
       if (minOutAmount > 0 || maxOutAmount > 0) {
         if (minOutAmount > 0) {
           // Max execution price = inAmountPerCycle / minOutAmount
@@ -255,99 +175,53 @@ export class JupiterDCAAPI {
           minExecutionPrice = inAmountDecimal / maxOutDecimal
           maxEstimatedTokens = toDecimalAmount(rawRemainingAmount, inputDecimals) / minExecutionPrice
         }
-
-        console.log(`DCA ${type} Order execution price calculation:`, {
-          rawInAmount,
-          inAmountDecimal,
-          minOutAmount,
-          maxOutAmount,
-          minExecutionPrice,
-          maxExecutionPrice,
-          minEstimatedTokens,
-          maxEstimatedTokens,
-          remainingAmount: toDecimalAmount(rawRemainingAmount, inputDecimals)
-        })
       } else {
         // If no limits set, use market price
-        minExecutionPrice = priceInInputToken
-        maxExecutionPrice = priceInInputToken
-        minEstimatedTokens = toDecimalAmount(rawRemainingAmount, inputDecimals) / priceInInputToken
+        minExecutionPrice = price
+        maxExecutionPrice = price
+        minEstimatedTokens = toDecimalAmount(rawRemainingAmount, inputDecimals) / price
         maxEstimatedTokens = minEstimatedTokens
-      }
-
-      return {
-        id: account.publicKey.toString(),
-        type,
-        token,
-        inputToken: inputTokenSymbol,
-        outputToken: outputTokenSymbol,
-        inputAmount: toDecimalAmount(rawInAmount, inputDecimals),
-        totalAmount: toDecimalAmount(rawTotalAmount, inputDecimals),
-        amountPerCycle: toDecimalAmount(rawInAmount, inputDecimals),
-        remainingCycles,
-        cycleFrequency: isDcaOrder ? account.account.cycleFrequency.toNumber() : 0,
-        lastUpdate: account.account.nextCycleAt.toNumber() * 1000,
-        publicKey: account.publicKey.toString(),
-        targetPrice: 0,
-        currentPrice: price,
-        priceToken,
-        estimatedOutput: minEstimatedTokens,  // Use min for backward compatibility
-        minEstimatedOutput: minEstimatedTokens,
-        maxEstimatedOutput: maxEstimatedTokens,
-        totalCycles,
-        completedCycles,
-        isActive: isDcaOrder && !isFlashFill && remainingCycles > 0,
-        remainingAmount: toDecimalAmount(rawRemainingAmount, inputDecimals),
-        minExecutionPrice,
-        maxExecutionPrice,
-        remainingInCycle: toDecimalAmount(rawInAmount, inputDecimals),
-        estimatedTokens: minEstimatedTokens
       }
     } else {
       // For sell orders, use minOutAmount if available
       if (minOutAmount > 0) {
         // For sell orders, execution price is minOutAmount / inAmountPerCycle
-        // Use raw values to calculate price, no need to convert to decimal first
-        executionPrice = minOutAmount / rawInAmount
-        estimatedTokens = toDecimalAmount(rawRemainingAmount, inputDecimals) * executionPrice
-        
-        console.log(`DCA SELL Order execution price calculation:`, {
-          minOutAmount,
-          rawInAmount,
-          executionPrice,
-          remainingAmount: toDecimalAmount(rawRemainingAmount, inputDecimals),
-          estimatedTokens
-        })
+        const minOutDecimal = toDecimalAmount(minOutAmount, outputDecimals)
+        minExecutionPrice = minOutDecimal / inAmountDecimal
+        minEstimatedTokens = toDecimalAmount(rawRemainingAmount, inputDecimals) * minExecutionPrice
       } else {
-        executionPrice = priceInInputToken
-        estimatedTokens = toDecimalAmount(rawRemainingAmount, inputDecimals) * priceInInputToken
+        minExecutionPrice = price
+        minEstimatedTokens = toDecimalAmount(rawRemainingAmount, inputDecimals) * price
       }
+    }
 
-      return {
-        id: account.publicKey.toString(),
-        type,
-        token,
-        inputToken: inputTokenSymbol,
-        outputToken: outputTokenSymbol,
-        inputAmount: toDecimalAmount(rawInAmount, inputDecimals),
-        totalAmount: toDecimalAmount(rawTotalAmount, inputDecimals),
-        amountPerCycle: toDecimalAmount(rawInAmount, inputDecimals),
-        remainingCycles,
-        cycleFrequency: isDcaOrder ? account.account.cycleFrequency.toNumber() : 0,
-        lastUpdate: account.account.nextCycleAt.toNumber() * 1000,
-        publicKey: account.publicKey.toString(),
-        targetPrice: 0,
-        currentPrice: price,
-        priceToken,
-        estimatedOutput: estimatedTokens,
-        totalCycles,
-        completedCycles,
-        isActive: isDcaOrder && !isFlashFill && remainingCycles > 0,
-        remainingAmount: toDecimalAmount(rawRemainingAmount, inputDecimals),
-        minExecutionPrice: executionPrice,  // For sell orders, min is the only price
-        remainingInCycle: toDecimalAmount(rawInAmount, inputDecimals),
-        estimatedTokens
-      }
+    return {
+      id: account.publicKey.toString(),
+      type,
+      token,
+      inputToken: inputTokenSymbol,
+      outputToken: outputTokenSymbol,
+      inputAmount: toDecimalAmount(rawInAmount, inputDecimals),
+      totalAmount: toDecimalAmount(rawTotalAmount, inputDecimals),
+      amountPerCycle: toDecimalAmount(rawInAmount, inputDecimals),
+      remainingCycles,
+      cycleFrequency: isDcaOrder ? account.account.cycleFrequency.toNumber() : 0,
+      lastUpdate: account.account.nextCycleAt.toNumber() * 1000,
+      publicKey: account.publicKey.toString(),
+      targetPrice: 0,
+      currentPrice: price,
+      priceToken,
+      estimatedOutput: minEstimatedTokens,  // Use min for backward compatibility
+      minEstimatedOutput: minEstimatedTokens,
+      maxEstimatedOutput: maxEstimatedTokens,
+      totalCycles,
+      completedCycles,
+      isActive: isDcaOrder && !isFlashFill && remainingCycles > 0,
+      remainingAmount: toDecimalAmount(rawRemainingAmount, inputDecimals),
+      minExecutionPrice,
+      maxExecutionPrice,
+      remainingInCycle: toDecimalAmount(rawInAmount, inputDecimals),
+      estimatedTokens: minEstimatedTokens
     }
   }
 
@@ -405,57 +279,68 @@ export class JupiterDCAAPI {
 
   async getDCAAccounts() {
     return this.withRetry(async () => {
-      if (!this.dca) {
-        await this.initDCA()
+      try {
         if (!this.dca) {
-          throw new Error('DCA SDK not initialized')
+          await this.initDCA()
+          if (!this.dca) {
+            throw new Error('DCA SDK not initialized')
+          }
         }
-      }
 
-      const accounts = await this.dca.getAll()
-      console.log('Raw DCA accounts:', accounts)
+        // Try to get accounts with retries
+        const accounts = await this.withRetry(async () => {
+          const result = await this.dca!.getAll()
+          if (!result) throw new Error('Failed to fetch DCA accounts')
+          return result
+        })
 
-      // Filter out flash fill orders
-      const activeDcaAccounts = accounts.filter(acc => {
-        const isFlashFill = acc.account.inUsed.eq(acc.account.inDeposited) && !acc.account.inDeposited.isZero()
-        return !isFlashFill
-      })
+        console.log('Raw DCA accounts:', accounts)
 
-      console.log('Active DCA accounts:', activeDcaAccounts)
+        // Filter out flash fill orders
+        const activeDcaAccounts = accounts.filter(acc => {
+          const isFlashFill = acc.account.inUsed.eq(acc.account.inDeposited) && !acc.account.inDeposited.isZero()
+          return !isFlashFill
+        })
 
-      // Process accounts by token
-      const accountsByToken = {
-        LOGOS: {
-          buys: activeDcaAccounts.filter(acc => acc.account.outputMint.equals(new PublicKey(LOGOS_MINT))),
-          sells: activeDcaAccounts.filter(acc => acc.account.inputMint.equals(new PublicKey(LOGOS_MINT)))
-        },
-        CHAOS: {
-          buys: activeDcaAccounts.filter(acc => acc.account.outputMint.equals(new PublicKey(CHAOS_MINT))),
-          sells: activeDcaAccounts.filter(acc => acc.account.inputMint.equals(new PublicKey(CHAOS_MINT)))
+        console.log('Active DCA accounts:', activeDcaAccounts)
+
+        // Process accounts by token
+        const accountsByToken = {
+          LOGOS: {
+            buys: activeDcaAccounts.filter(acc => acc.account.outputMint.equals(new PublicKey(LOGOS_MINT))),
+            sells: activeDcaAccounts.filter(acc => acc.account.inputMint.equals(new PublicKey(LOGOS_MINT)))
+          },
+          CHAOS: {
+            buys: activeDcaAccounts.filter(acc => acc.account.outputMint.equals(new PublicKey(CHAOS_MINT))),
+            sells: activeDcaAccounts.filter(acc => acc.account.inputMint.equals(new PublicKey(CHAOS_MINT)))
+          }
         }
-      }
 
-      // Get current prices
-      const [logosPrice, chaosPrice] = await Promise.all([
-        this.getCurrentPrice(LOGOS_MINT),
-        this.getCurrentPrice(CHAOS_MINT)
-      ])
+        // Get current prices with retries
+        const [logosPrice, chaosPrice] = await Promise.all([
+          this.getCurrentPrice(LOGOS_MINT),
+          this.getCurrentPrice(CHAOS_MINT)
+        ])
 
-      // Convert accounts to positions
-      const positions = await Promise.all([
-        ...accountsByToken.LOGOS.buys.map(acc => this.convertDCAAccount(acc, logosPrice.price, "LOGOS", "BUY")),
-        ...accountsByToken.LOGOS.sells.map(acc => this.convertDCAAccount(acc, logosPrice.price, "LOGOS", "SELL")),
-        ...accountsByToken.CHAOS.buys.map(acc => this.convertDCAAccount(acc, chaosPrice.price, "CHAOS", "BUY")),
-        ...accountsByToken.CHAOS.sells.map(acc => this.convertDCAAccount(acc, chaosPrice.price, "CHAOS", "SELL"))
-      ])
+        // Convert accounts to positions
+        const positions = await Promise.all([
+          ...accountsByToken.LOGOS.buys.map(acc => this.convertDCAAccount(acc, logosPrice.price, "LOGOS", "BUY")),
+          ...accountsByToken.LOGOS.sells.map(acc => this.convertDCAAccount(acc, logosPrice.price, "LOGOS", "SELL")),
+          ...accountsByToken.CHAOS.buys.map(acc => this.convertDCAAccount(acc, chaosPrice.price, "CHAOS", "BUY")),
+          ...accountsByToken.CHAOS.sells.map(acc => this.convertDCAAccount(acc, chaosPrice.price, "CHAOS", "SELL"))
+        ])
 
-      const summary = await this.getDCASummary(positions)
-      const chartData = this.generateChartData(summary)
+        const summary = await this.getDCASummary(positions)
+        const chartData = this.generateChartData(summary)
 
-      return {
-        positions,
-        summary,
-        chartData
+        return {
+          positions,
+          summary,
+          chartData
+        }
+      } catch (error) {
+        console.error('Error in getDCAAccounts:', error)
+        throw error
       }
     })
   }
