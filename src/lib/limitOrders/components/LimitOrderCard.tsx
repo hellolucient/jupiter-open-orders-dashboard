@@ -28,6 +28,13 @@ export function LimitOrderCard({ order }: LimitOrderCardProps) {
       const inputSymbol = order.inputMint.symbol
       const outputSymbol = order.outputMint.symbol
 
+      // For USDT pairs, we can use the price directly as USDC (1:1 peg)
+      if (inputSymbol === 'USDT' || outputSymbol === 'USDT') {
+        setUsdcPrice(order.price)
+        setTotalUSDC(total)
+        return
+      }
+
       // Skip if already in USDC
       if (inputSymbol === 'USDC' || outputSymbol === 'USDC') {
         setUsdcPrice(order.price)
@@ -93,6 +100,9 @@ export function LimitOrderCard({ order }: LimitOrderCardProps) {
   const totalSymbol = isBuy ? order.inputMint.symbol : order.outputMint.symbol
   const priceSymbol = isBuy ? `${totalSymbol}/${amountSymbol}` : `${totalSymbol}/${amountSymbol}`
 
+  // Determine if we should show USDC price as primary
+  const showUsdcAsPrimary = totalSymbol !== 'USDC'
+
   return (
     <div className="bg-gray-800 rounded-lg p-4 mb-3">
       <div className="flex items-center justify-between mb-2">
@@ -113,23 +123,31 @@ export function LimitOrderCard({ order }: LimitOrderCardProps) {
         <div className="flex justify-between">
           <span>Execution Price:</span>
           <div className="text-right">
-            {usdcPrice !== null && (
-              <div>≈ ${formatPrice(usdcPrice)} USDC/{amountSymbol}</div>
+            {showUsdcAsPrimary && usdcPrice !== null ? (
+              <>
+                <div>≈ ${formatPrice(usdcPrice)} USDC/{amountSymbol}</div>
+                <div className="text-gray-400 text-xs">
+                  {formatPrice(order.price)} {priceSymbol}
+                </div>
+              </>
+            ) : (
+              <div>{formatPrice(order.price)} {priceSymbol}</div>
             )}
-            <div className="text-gray-400 text-xs">
-              {formatPrice(order.price)} {priceSymbol}
-            </div>
           </div>
         </div>
         <div className="flex justify-between">
           <span>Total:</span>
           <div className="text-right">
-            {totalUSDC !== null && (
-              <div>≈ ${formatAmount(totalUSDC, 'USDC')} USDC</div>
+            {showUsdcAsPrimary && totalUSDC !== null ? (
+              <>
+                <div>≈ ${formatAmount(totalUSDC, 'USDC')} USDC</div>
+                <div className="text-gray-400 text-xs">
+                  {formatAmount(total, totalSymbol)} {totalSymbol}
+                </div>
+              </>
+            ) : (
+              <div>{formatAmount(total, totalSymbol)} {totalSymbol}</div>
             )}
-            <div className="text-gray-400 text-xs">
-              {formatAmount(total, totalSymbol)} {totalSymbol}
-            </div>
           </div>
         </div>
       </div>
