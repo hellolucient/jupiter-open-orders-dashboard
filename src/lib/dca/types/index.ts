@@ -60,6 +60,7 @@ export interface DCAAccountType {
     minOutAmount?: BN
     maxOutAmount?: BN
     createdAt: BN
+    updatedAt: BN
     nextCycleAmountLeft: BN
   }
 } 

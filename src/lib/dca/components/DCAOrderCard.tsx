@@ -3,16 +3,18 @@
 import { useEffect, useState } from 'react'
 import { PriceService } from '@/lib/shared/services/PriceService'
 import { formatNumber, formatPrice } from '@/lib/shared/utils/format'
+import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline'
 import clsx from 'clsx'
 
 interface DCAOrderCardProps {
+  id: string
   type: 'BUY' | 'SELL'
   totalAmount: number
   orderSize: number
   frequency: string
   status: string
   remainingAmount: number
-  timestamp: string
+  timestamp: number
   estimatedOutput: number
   minExecutionPrice?: number
   maxExecutionPrice?: number
@@ -24,6 +26,7 @@ interface DCAOrderCardProps {
 }
 
 export function DCAOrderCard({
+  id,
   type,
   totalAmount,
   orderSize,
@@ -76,8 +79,10 @@ export function DCAOrderCard({
   }, [minExecutionPrice, maxExecutionPrice, inputToken, outputToken, priceToken])
 
   // Format date to be more readable
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr)
+  const formatDate = (timestamp: number) => {
+    console.log('Formatting timestamp:', timestamp)
+    const date = new Date(timestamp)
+    console.log('Resulting date:', date.toISOString())
     return date.toLocaleString('en-US', {
       timeZone: 'UTC',
       month: 'short',
@@ -198,6 +203,18 @@ export function DCAOrderCard({
         <div className="flex justify-between items-center">
           <span className="text-gray-400">Last Update:</span>
           <span className="text-white">{formatDate(timestamp)}</span>
+        </div>
+
+        <div className="pt-2 border-t border-gray-700">
+          <a
+            href={`https://solscan.io/account/${id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 text-gray-400 hover:text-gray-300 transition-colors"
+          >
+            <ArrowTopRightOnSquareIcon className="w-4 h-4" />
+            View on Solscan
+          </a>
         </div>
       </div>
     </div>

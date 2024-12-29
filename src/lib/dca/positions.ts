@@ -4,23 +4,28 @@ import { TOKENS } from '../limitOrders/tokenConfig'
 import BN from 'bn.js'
 import type { Position } from './types/index'
 
-interface DCAAccountData {
-  user: PublicKey
-  inputMint: PublicKey
-  outputMint: PublicKey
-  idx: BN
-  nextCycleAt: BN
-  inDeposited: BN
-  inWithdrawn: BN
-  outWithdrawn: BN
-  inAmountPerCycle: BN
-  inUsed: BN
-  cycleFrequency: BN
-}
-
-interface ProgramAccount<T> {
+// Extend the SDK's account type to include updatedAt
+interface ExtendedDCAAccount {
   publicKey: PublicKey
-  account: T
+  account: {
+    user: PublicKey
+    inputMint: PublicKey
+    outputMint: PublicKey
+    idx: BN
+    nextCycleAt: BN
+    inDeposited: BN
+    inWithdrawn: BN
+    outWithdrawn: BN
+    inUsed: BN
+    inAmountPerCycle: BN
+    cycleFrequency: BN
+    bump: number
+    minOutAmount?: BN
+    maxOutAmount?: BN
+    createdAt: BN
+    updatedAt: BN
+    nextCycleAmountLeft: BN
+  }
 }
 
 // Helper function to safely convert BN to number with decimals
@@ -37,7 +42,7 @@ export async function getDcaPositions(connection: Connection): Promise<Position[
   const dca = new DCA(connection, Network.MAINNET)
 
   // Get all DCA accounts
-  const allAccounts = await dca.getAll()
+  const allAccounts = await dca.getAll() as unknown as ExtendedDCAAccount[]
   console.log(`Found ${allAccounts.length} total DCA accounts`)
 
   // Create PublicKey objects for our tokens and get their decimals
@@ -60,7 +65,7 @@ export async function getDcaPositions(connection: Connection): Promise<Position[
   console.log(`Found ${relevantAccounts.length} CHAOS/LOGOS related DCA accounts`)
 
   // Process each account into our Position format
-  const positions: Position[] = relevantAccounts.map((account: ProgramAccount<DCAAccountData>) => {
+  const positions: Position[] = relevantAccounts.map((account: ExtendedDCAAccount) => {
     const isBuy = account.account.inputMint.equals(USDC_MINT)
     const token = isBuy 
       ? (account.account.outputMint.equals(CHAOS_MINT) ? 'CHAOS' : 'LOGOS')
@@ -100,7 +105,7 @@ export async function getDcaPositions(connection: Connection): Promise<Position[
       amountPerCycle,
       remainingCycles,
       cycleFrequency: account.account.cycleFrequency.toNumber(),
-      lastUpdate: account.account.nextCycleAt.toNumber() * 1000,
+      lastUpdate: (account.account.updatedAt || account.account.createdAt).toNumber() * 1000,
       publicKey: account.publicKey.toString(),
       targetPrice: 0,
       currentPrice: 0,

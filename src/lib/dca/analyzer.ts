@@ -12,7 +12,7 @@ export async function analyzeDcaOrders() {
   const dca = new DCA(connection, Network.MAINNET)
   
   console.log('Fetching DCA positions...')
-  const accounts = await dca.getAll()
+  const accounts = await dca.getAll() as unknown as DCAAccountType[]
   console.log(`Found ${accounts.length} total positions`)
 
   // Debug: Log RPC URL being used

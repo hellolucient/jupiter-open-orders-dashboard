@@ -3,6 +3,7 @@
 import type { LimitOrder } from '@/lib/limitOrders/types'
 import { useEffect, useState } from 'react'
 import { PriceService } from '@/lib/shared/services/PriceService'
+import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline'
 
 interface LimitOrderCardProps {
   order: LimitOrder
@@ -149,6 +150,17 @@ export function LimitOrderCard({ order }: LimitOrderCardProps) {
               <div>{formatAmount(total, totalSymbol)} {totalSymbol}</div>
             )}
           </div>
+        </div>
+        <div className="pt-2 border-t border-gray-700">
+          <a
+            href={`https://solscan.io/account/${order.id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 text-gray-400 hover:text-gray-300 transition-colors"
+          >
+            <ArrowTopRightOnSquareIcon className="w-4 h-4" />
+            View on Solscan
+          </a>
         </div>
       </div>
     </div>

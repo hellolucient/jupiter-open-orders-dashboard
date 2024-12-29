@@ -1,7 +1,32 @@
 import { DCA, Network } from '@jup-ag/dca-sdk'
 import { Connection, PublicKey } from '@solana/web3.js'
-import type { TokenSummary, Position, ChartDataPoint, DCAAccountType } from './types/index'
+import type { TokenSummary, Position, ChartDataPoint } from './types/index'
 import { TOKENS, getTokenByMint, toDecimalAmount } from '../shared/tokenConfig'
+import BN from 'bn.js'
+
+// Extend the SDK's account type to include updatedAt
+interface ExtendedDCAAccount {
+  publicKey: PublicKey
+  account: {
+    user: PublicKey
+    inputMint: PublicKey
+    outputMint: PublicKey
+    idx: BN
+    nextCycleAt: BN
+    inDeposited: BN
+    inWithdrawn: BN
+    outWithdrawn: BN
+    inUsed: BN
+    inAmountPerCycle: BN
+    cycleFrequency: BN
+    bump: number
+    minOutAmount?: BN
+    maxOutAmount?: BN
+    createdAt: BN
+    updatedAt: BN
+    nextCycleAmountLeft: BN
+  }
+}
 
 const LOGOS_MINT = TOKENS.LOGOS.address
 const CHAOS_MINT = TOKENS.CHAOS.address
@@ -122,7 +147,12 @@ export class JupiterDCAAPI {
     }
   }
 
-  private async convertDCAAccount(account: DCAAccountType, price: number, token: string, type: "BUY" | "SELL"): Promise<Position> {
+  private async convertDCAAccount(account: ExtendedDCAAccount, price: number, token: string, type: "BUY" | "SELL"): Promise<Position> {
+    console.log('Raw timestamps for account', account.publicKey.toString(), {
+      updatedAt: account.account.updatedAt?.toString(),
+      createdAt: account.account.createdAt?.toString(),
+      nextCycleAt: account.account.nextCycleAt?.toString()
+    })
     // Get input and output token info
     const inputToken = getTokenByMint(account.account.inputMint.toString())
     const outputToken = getTokenByMint(account.account.outputMint.toString())
@@ -206,7 +236,7 @@ export class JupiterDCAAPI {
       amountPerCycle: toDecimalAmount(rawInAmount, inputDecimals),
       remainingCycles,
       cycleFrequency: isDcaOrder ? account.account.cycleFrequency.toNumber() : 0,
-      lastUpdate: account.account.nextCycleAt.toNumber() * 1000,
+      lastUpdate: ((account.account.updatedAt || account.account.createdAt).toNumber()) * 1000,
       publicKey: account.publicKey.toString(),
       targetPrice: 0,
       currentPrice: price,
@@ -291,7 +321,7 @@ export class JupiterDCAAPI {
         const accounts = await this.withRetry(async () => {
           const result = await this.dca!.getAll()
           if (!result) throw new Error('Failed to fetch DCA accounts')
-          return result
+          return result as unknown as ExtendedDCAAccount[]
         })
 
         console.log('Raw DCA accounts:', accounts)
